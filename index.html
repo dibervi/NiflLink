@@ -23,7 +23,6 @@
       overflow: hidden; position: relative;
     }
 
-    /* MATRIX RUNOVÝ DÉŠŤ */
     #matrixCanvas {
       position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
@@ -36,7 +35,6 @@
       opacity: 0.04; pointer-events: none; z-index: 10;
     }
 
-    /* VIGNETACE */
     body::after {
       content: ""; position: absolute; inset: 0;
       background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 100%);
@@ -52,7 +50,6 @@
       transition: letter-spacing 0.8s ease;
     }
     h1 span { color: var(--gold); }
-    body:hover h1 { letter-spacing: 0.7em; }
 
     .stars-container {
       position: relative;
@@ -71,7 +68,6 @@
       cursor: help;
     }
 
-    /* SCHOVANÁ JMÉNA (HOVER) */
     .star::after {
       content: attr(data-name);
       position: absolute;
@@ -112,21 +108,27 @@
       cursor: pointer;
       box-shadow: 0 0 30px rgba(0,0,0,0.5);
       display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s;
+      transition: all 0.5s ease;
     }
-    .center-button:hover { transform: scale(1.05); }
 
     #ui-panel {
       display: none; position: absolute; bottom: 8vh;
       z-index: 7; text-align: center;
-      background: rgba(0,0,0,0.8); padding: 15px;
-      border-radius: 20px; backdrop-filter: blur(10px);
-      border: 1px solid rgba(189,155,93,0.2);
+      background: rgba(0,0,0,0.85); padding: 20px;
+      border-radius: 20px; backdrop-filter: blur(15px);
+      border: 1px solid rgba(189,155,93,0.3);
       width: 85%; max-width: 400px;
+      transition: opacity 0.5s ease, transform 0.5s ease;
     }
 
-    input { background: #111; border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; width: 55%; outline: none; }
-    button#connectBtn { background: var(--gold); border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+    .ui-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+    }
+
+    input { background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 80%; outline: none; margin-bottom: 15px; text-align: center; font-weight: bold; letter-spacing: 1px; }
+    button#connectBtn { background: var(--gold); border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; color: #1a1a1a; width: 80%; text-transform: uppercase; letter-spacing: 2px; }
   </style>
 </head>
 <body>
@@ -141,9 +143,10 @@
   </div>
 
   <div id="ui-panel">
-    <div style="font-size: 0.8em; margin-bottom: 8px; letter-spacing: 1px;">TVOJE MÍSTO: <span id="myNameDisplay" style="color:var(--gold); font-weight:bold;"></span></div>
-    <input type="text" id="remoteIdInput" placeholder="JMÉNO-PIN CÍLE">
-    <button id="connectBtn">PROPOJIT</button>
+    <div style="font-size: 0.7em; margin-bottom: 5px; letter-spacing: 2px; color: #666;">AKTIVNÍ SNĚM</div>
+    <div id="myNameDisplay" style="color:var(--gold); font-weight:bold; font-size: 1.2em; margin-bottom: 15px; letter-spacing: 1px;"></div>
+    <input type="text" id="remoteIdInput" placeholder="ZADEJ CÍL CESTY">
+    <button id="connectBtn">Vstoupit na Bifröst</button>
   </div>
 
   <script>
@@ -153,9 +156,18 @@
     let mySeat = -1;
     let isSpeaking = false;
     let myPeer, myStream;
-    let activePeers = new Map(); // Mapa pro ID -> Index runy
+    let activePeers = new Map();
 
-    // --- MATRIX EFEKT ---
+    // --- ZVUKY ---
+    const sndAnvil = new Audio('https://www.soundjay.com/mechanical/sounds/anvil-hit-01.mp3');
+    const sndWood = new Audio('https://www.soundjay.com/buttons/sounds/button-20.mp3'); // Simulace Gungniru
+    
+    function playSound(snd) {
+      snd.currentTime = 0;
+      snd.play().catch(e => {});
+    }
+
+    // --- MATRIX ---
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     let columns, drops;
@@ -183,21 +195,13 @@
     }
     setInterval(drawMatrix, 50);
 
-    // --- ZVUK KLADIVA ---
-    function playHammerSound() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-      } catch(e) {}
-    }
+    // --- KONFIGURACE PEER ---
+    const peerConfig = {
+      'iceServers': [
+        { 'urls': 'stun:stun.l.google.com:19302' },
+        { 'urls': 'stun:stun1.l.google.com:19302' }
+      ]
+    };
 
     // --- GENEROVÁNÍ KRUHU ---
     const container = document.getElementById('starsContainer');
@@ -213,19 +217,20 @@
       container.appendChild(runeDiv);
     }
 
-    // --- LOGIKA PŘIPOJENÍ ---
+    // --- START ---
     document.getElementById('startBtn').addEventListener('click', async () => {
-      playHammerSound();
+      playSound(sndWood);
       try {
         myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const myName = gods[Math.floor(Math.random()*gods.length)];
         const myPin = Math.floor(1000+Math.random()*9000);
         const myCustomId = `${myName}-${myPin}`;
 
-        myPeer = new Peer(myCustomId);
+        myPeer = new Peer(myCustomId, { config: peerConfig });
 
         myPeer.on('open', (id) => {
-          document.getElementById('startBtn').style.display = "none";
+          document.getElementById('startBtn').style.opacity = "0.3";
+          document.getElementById('startBtn').style.pointerEvents = "none";
           document.getElementById('ui-panel').style.display = "block";
           document.getElementById('myNameDisplay').textContent = id;
           mySeat = 0;
@@ -245,6 +250,10 @@
 
     function handleCall(call) {
       if (!activePeers.has(call.peer)) {
+        playSound(sndAnvil);
+        // Skryjeme UI panel po úspěšném propojení
+        document.getElementById('ui-panel').classList.add('ui-hidden');
+        
         const seatIndex = activePeers.size + 1;
         activePeers.set(call.peer, seatIndex);
         const s = document.getElementById('star-' + seatIndex);
@@ -268,13 +277,15 @@
           s.removeAttribute('data-name');
         }
         activePeers.delete(call.peer);
+        // Pokud nikdo nezbyl, panel se může zase objevit
+        if(activePeers.size === 0) document.getElementById('ui-panel').classList.remove('ui-hidden');
       });
     }
 
     document.getElementById('connectBtn').addEventListener('click', () => {
-      playHammerSound();
       const rId = document.getElementById('remoteIdInput').value.toUpperCase();
       if(rId && rId !== myPeer.id) {
+        playSound(sndWood);
         const call = myPeer.call(rId, myStream);
         handleCall(call);
       }
@@ -299,7 +310,6 @@
       loop();
     }
 
-    // PARALAXA
     document.addEventListener('mousemove', (e) => {
       const x = (window.innerWidth / 2 - e.pageX) / 45;
       const y = (window.innerHeight / 2 - e.pageY) / 45;
