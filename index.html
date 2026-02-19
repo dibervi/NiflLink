@@ -87,10 +87,10 @@
 
   <div class="input-container">
     <svg id="rune-stone" viewBox="0 0 260 140">
-      <text id="rune-name" x="130" y="75" font-size="28" fill="#e0ffff" text-anchor="middle" font-family="serif">Filip</text>
+      <text id="rune-name" x="130" y="75" font-size="28" fill="#e0ffff" text-anchor="middle" font-family="serif"></text>
       <g id="rune-circle"></g>
     </svg>
-    <input id="nameInput" placeholder="Klikni sem a napiš jméno" value="Filip">
+    <input id="nameInput" placeholder="Klikni sem a napiš jméno" value="">
   </div>
 
   <button class="connect" onclick="connect()">
@@ -127,12 +127,12 @@
     let link = "";
 
     const urlParams = new URLSearchParams(window.location.search);
-    myName = urlParams.get('name') || "Anonym";
+    myName = urlParams.get('name') || "";
     document.getElementById("nameInput").value = myName;
     updateRuneStone();
 
     document.getElementById("nameInput").addEventListener("input", () => {
-      myName = document.getElementById("nameInput").value.trim() || myName;
+      myName = document.getElementById("nameInput").value.trim();
       updateRuneStone();
     });
 
@@ -141,7 +141,7 @@
       const circle = document.getElementById("rune-circle");
       circle.innerHTML = "";
       const runes = "ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ".split("");
-      const count = Math.max(8, Math.min(24, myName.length * 2));
+      const count = Math.max(8, Math.min(24, (myName.length || 1) * 2));
       const radius = 55;
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2;
@@ -159,7 +159,7 @@
     }
 
     async function connect() {
-      myName = document.getElementById("nameInput").value.trim() || myName;
+      myName = document.getElementById("nameInput").value.trim();
       try {
         myStream = await navigator.mediaDevices.getUserMedia({audio:true});
         document.getElementById("status").innerText = "Připojeno! Čekám na ostatní...";
@@ -221,15 +221,26 @@
       });
     }
 
-    function handleNewPeer(peerId, call = null) 
+    function handleNewPeer(peerId, call = null) {
+      if (peers[peerId]) return;
+      peers[peerId] = {name: "?", call, isTalking: false};
+
       if (call) {
-  call.on('stream', remoteStream => {
-    console.log("Přišel zvuk od", peerId);
-    const audio = document.getElementById('remoteAudios');
-    audio.srcObject = remoteStream;
-    audio.play().catch(err => console.error("Audio chyba:", err));
-  });
-}
+        call.on('stream', remoteStream => {
+          console.log("Přišel zvuk od", peerId);
+          const audio = document.getElementById('remoteAudios');
+          audio.srcObject = remoteStream;
+          audio.play().catch(err => console.error("Audio chyba:", err));
+        });
+      }
+
+      if (!call) {
+        const outgoing = myPeer.call(peerId, myStream);
+        outgoing.on('stream', () => {});
+        peers[peerId].call = outgoing;
+      }
+      updatePeersList();
+    }
 
     function updatePeersList() {
       const div = document.getElementById("peers");
