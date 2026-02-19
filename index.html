@@ -18,7 +18,8 @@
       position: relative;
       overflow: hidden;
     }
-    body::before { /* hvězdy */ content:""; position:absolute; inset:0;
+    body::before {
+      content:""; position:absolute; inset:0;
       background: radial-gradient(white 1px,transparent 1px),
                   radial-gradient(white 1px,transparent 1px),
                   radial-gradient(white 1px,transparent 1px);
@@ -140,7 +141,9 @@
       try {
         myStream = await navigator.mediaDevices.getUserMedia({audio:true});
         document.getElementById("status").innerText = "Připojeno! Čekám na ostatní...";
+        
         myPeer = new Peer();
+        
         myPeer.on('open', id => {
           myId = id;
           link = `${location.origin + location.pathname}?name=${encodeURIComponent(myName)}`;
@@ -156,10 +159,23 @@
           document.getElementById("talkBtn").style.display = "inline-block";
           document.getElementById("talkBtn").disabled = false;
         });
+
+        // ← sem přesunuty eventy, až po vytvoření myPeer
         myPeer.on('call', call => {
           call.answer(myStream);
           handleNewPeer(call.peer, call);
         });
+
+        myPeer.on('connection', conn => {
+          conn.on('data', data => {
+            if (data.type === "talking" && peers[conn.peer]) {
+              peers[conn.peer].isTalking = data.value;
+              peers[conn.peer].name = data.name || peers[conn.peer].name;
+              updatePeersList();
+            }
+          });
+        });
+
       } catch(e) {
         alert("Chyba mikrofonu: " + e.message);
       }
@@ -203,18 +219,8 @@
       }
     }
 
-    myPeer?.on('connection', conn => {
-      conn.on('data', data => {
-        if (data.type === "talking" && peers[conn.peer]) {
-          peers[conn.peer].isTalking = data.value;
-          peers[conn.peer].name = data.name || peers[conn.peer].name;
-          updatePeersList();
-        }
-      });
-    });
-
     function copyLink() {
-      navigator.clipboard.writeText(link);
+      navigator.clipboard.writeText(link).catch(() => alert("Kopírování selhalo"));
       alert("Odkaz zkopírován!");
     }
   </script>
