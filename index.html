@@ -6,31 +6,137 @@
   <title>Nifl-Link</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
-    :root { --gold: #bd9b5d; --bg: #0a0a0a; --rune-stone: #222; --fire: #ff8800; }
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--bg); color: #e0e0e0; font-family: "Segoe UI", sans-serif; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
-    #matrixCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.12; }
-    .grain { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.04; pointer-events: none; z-index: 10; }
-    body::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 100%); pointer-events: none; z-index: 5; }
-    h1 { position: absolute; top: 5vh; font-size: clamp(20px, 6vw, 32px); letter-spacing: 0.5em; color: #333; z-index: 6; margin: 0; text-transform: uppercase; }
+    :root {
+      --gold: #bd9b5d;
+      --bg: #0a0a0a;
+      --rune-stone: #222;
+      --fire: #ff8800;
+    }
+
+    body, html {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      background-color: var(--bg);
+      color: #e0e0e0;
+      font-family: "Segoe UI", sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; position: relative;
+    }
+
+    #matrixCanvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0; opacity: 0.12;
+    }
+
+    .grain {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: url('https://grainy-gradients.vercel.app/noise.svg');
+      opacity: 0.04; pointer-events: none; z-index: 10;
+    }
+
+    body::after {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 100%);
+      pointer-events: none; z-index: 5;
+    }
+
+    h1 {
+      position: absolute;
+      top: 5vh;
+      font-size: clamp(20px, 6vw, 32px);
+      letter-spacing: 0.5em;
+      color: #333; z-index: 6; margin: 0;
+      text-transform: uppercase;
+    }
     h1 span { color: var(--gold); }
-    .stars-container { position: relative; width: 85vmin; height: 85vmin; display: flex; align-items: center; justify-content: center; z-index: 4; transition: transform 0.1s ease-out; }
-    .star { position: absolute; font-size: clamp(18px, 5vmin, 38px); color: var(--rune-stone); transition: all 0.4s ease; user-select: none; }
-    .star::after { content: attr(data-name); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); font-size: 10px; letter-spacing: 1px; color: var(--gold); opacity: 0; transition: opacity 0.4s ease; white-space: nowrap; }
+
+    .stars-container {
+      position: relative;
+      width: 85vmin; height: 85vmin;
+      display: flex;
+      align-items: center; justify-content: center;
+      z-index: 4;
+    }
+
+    .star {
+      position: absolute;
+      font-size: clamp(18px, 5vmin, 38px);
+      color: var(--rune-stone);
+      transition: all 0.4s ease;
+      user-select: none;
+    }
+
+    .star::after {
+      content: attr(data-name);
+      position: absolute;
+      top: 120%; left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--gold);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      white-space: nowrap;
+    }
     .star:hover::after { opacity: 0.8; }
+
     .star.active { color: var(--gold); animation: breathe 5s infinite; }
-    @keyframes breathe { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
-    .star.speaking { animation: none !important; color: var(--fire) !important; text-shadow: 0 0 20px var(--fire); transform: scale(1.4) !important; opacity: 1 !important; }
-    .center-button { z-index: 10; width: 25vmin; height: 25vmin; max-width: 130px; max-height: 130px; font-size: clamp(30px, 8vmin, 50px); background: linear-gradient(145deg, #bd9b5d, #8a6d3b); color: #1a1a1a; border: none; border-radius: 50%; cursor: pointer; box-shadow: 0 0 30px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; transition: all 0.5s ease; }
-    #ui-panel { display: none; position: absolute; bottom: 8vh; z-index: 7; text-align: center; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 20px; backdrop-filter: blur(15px); border: 1px solid rgba(189,155,93,0.3); width: 85%; max-width: 400px; }
-    .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(20px); transition: 0.5s; }
-    input { background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 80%; outline: none; margin-bottom: 15px; text-align: center; font-weight: bold; }
-    button#connectBtn { background: var(--gold); border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; color: #1a1a1a; width: 80%; text-transform: uppercase; letter-spacing: 2px; }
+    
+    @keyframes breathe {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+
+    .star.speaking {
+      animation: none !important;
+      color: var(--fire) !important;
+      text-shadow: 0 0 20px var(--fire), 0 0 40px var(--fire);
+      transform: scale(1.4) !important;
+      opacity: 1 !important;
+    }
+
+    .center-button {
+      z-index: 10;
+      width: 25vmin; height: 25vmin;
+      max-width: 130px;
+      max-height: 130px;
+      font-size: clamp(30px, 8vmin, 50px);
+      background: linear-gradient(145deg, #bd9b5d, #8a6d3b);
+      color: #1a1a1a;
+      border: none; border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.5s ease;
+    }
+
+    #ui-panel {
+      display: none; position: absolute; bottom: 8vh;
+      z-index: 7;
+      text-align: center;
+      background: rgba(0,0,0,0.85); padding: 20px;
+      border-radius: 20px; backdrop-filter: blur(15px);
+      border: 1px solid rgba(189,155,93,0.3);
+      width: 85%; max-width: 400px;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+
+    input { background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 80%;
+    outline: none; margin-bottom: 15px; text-align: center; }
+    button#connectBtn { background: var(--gold); border: none; padding: 12px 25px;
+    border-radius: 10px; cursor: pointer; font-weight: bold; color: #1a1a1a; width: 80%; text-transform: uppercase; letter-spacing: 2px;
+    }
   </style>
 </head>
 <body>
 
   <canvas id="matrixCanvas"></canvas>
   <div class="grain"></div>
+
   <h1>NIFL-<span>LINK</span></h1>
 
   <div class="stars-container" id="starsContainer">
@@ -39,15 +145,17 @@
 
   <div id="ui-panel">
     <div style="font-size: 0.7em; margin-bottom: 5px; letter-spacing: 2px; color: #666;">AKTIVNÍ SNĚM</div>
-    <div id="myNameDisplay" style="color:var(--gold); font-weight:bold; font-size: 2.5em; margin-bottom: 15px; letter-spacing: 5px;"></div>
+    <div id="myNameDisplay" style="color:var(--gold); font-weight:bold; font-size: 2em; margin-bottom: 15px; letter-spacing: 5px;"></div>
     <input type="tel" id="remoteIdInput" placeholder="ZADEJ PIN" maxlength="4" style="font-size: 24px; letter-spacing: 8px;">
     <button id="connectBtn">Vstoupit na Bifröst</button>
   </div>
 
   <script>
     const runes = ["ᚫ", "ᚱ", "ᚷ", "ᛞ", "ᛗ", "ᛟ", "ᚹ", "ᚻ", "ᚾ", "ᛁ", "ᛃ", "ᛒ"];
-    let mySeat = 0, isSpeaking = false, myPeer, myStream, activePeers = new Map();
-
+    let mySeat = -1;
+    let isSpeaking = false;
+    let myPeer, myStream;
+    let activePeers = new Map();
     const sndAnvil = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_7306e0659d.mp3');
     const sndWood = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_c359670605.mp3');
 
@@ -55,18 +163,30 @@
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') await audioCtx.resume();
-        snd.currentTime = 0; await snd.play();
-      } catch(e) {}
+        snd.currentTime = 0;
+        await snd.play();
+      } catch(e) { console.log("Audio blocked"); }
     }
 
-    // MATRIX ANIMACE
-    const canvas = document.getElementById('matrixCanvas'), ctx = canvas.getContext('2d');
+    // MATRIX
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
     let columns, drops;
-    function initMatrix() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; columns = Math.floor(canvas.width / 25); drops = Array(columns).fill(1); }
-    initMatrix(); window.addEventListener('resize', initMatrix);
+
+    function initMatrix() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      columns = Math.floor(canvas.width / 25);
+      drops = Array(columns).fill(1);
+    }
+    initMatrix();
+    window.addEventListener('resize', initMatrix);
+
     function drawMatrix() {
-      ctx.fillStyle = "rgba(10, 10, 10, 0.2)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = isSpeaking ? "#bd9b5d" : "#111"; ctx.font = "14px monospace";
+      ctx.fillStyle = "rgba(10, 10, 10, 0.2)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = isSpeaking ? "#bd9b5d" : "#111"; 
+      ctx.font = "14px monospace";
       for (let i = 0; i < drops.length; i++) {
         const text = runes[Math.floor(Math.random() * runes.length)];
         ctx.fillText(text, i * 25, drops[i] * 25);
@@ -76,42 +196,66 @@
     }
     setInterval(drawMatrix, 60);
 
-    // WEBRTC KONFIGURACE
-    const peerConfig = { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }, { 'urls': 'stun:stun1.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' };
+    const peerConfig = {
+      'iceServers': [
+        { 'urls': 'stun:stun.l.google.com:19302' },
+        { 'urls': 'stun:stun1.l.google.com:19302' }
+      ],
+      'sdpSemantics': 'unified-plan'
+    };
 
-    function startHeartbeat() { setInterval(() => { if (myPeer && !myPeer.disconnected) myPeer.socket.send({type: 'HEARTBEAT'}); }, 5000); }
+    function startHeartbeat() {
+      setInterval(() => {
+        if (myPeer && !myPeer.destroyed && !myPeer.disconnected) {
+          myPeer.socket.send({type: 'HEARTBEAT'});
+        }
+      }, 5000);
+    }
 
-    // GENERUJ KRUH
     const container = document.getElementById('starsContainer');
     for (let i = 0; i < 12; i++) {
       const runeDiv = document.createElement('div');
-      runeDiv.className = 'star'; runeDiv.id = 'star-' + i; runeDiv.textContent = runes[i];
-      const angle = (i * 360) / 12 - 90, rad = angle * Math.PI / 180;
+      runeDiv.className = 'star';
+      runeDiv.id = 'star-' + i;
+      runeDiv.textContent = runes[i];
+      const angle = (i * 360) / 12 - 90;
+      const rad = angle * Math.PI / 180;
       runeDiv.style.left = `calc(50% + ${Math.cos(rad) * 35}vmin - 10px)`;
       runeDiv.style.top = `calc(50% + ${Math.sin(rad) * 35}vmin - 10px)`;
       container.appendChild(runeDiv);
     }
 
-    // START
     document.getElementById('startBtn').addEventListener('click', async () => {
       await playSound(sndWood);
       try {
-        myStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+        myStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+        });
+
         const myPin = Math.floor(1000 + Math.random() * 9000).toString();
         myPeer = new Peer(myPin, { config: peerConfig });
 
         myPeer.on('open', (id) => {
-          document.getElementById('startBtn').style.display = "none";
+          document.getElementById('startBtn').style.opacity = "0.2";
+          document.getElementById('startBtn').style.pointerEvents = "none";
           document.getElementById('ui-panel').style.display = "block";
           document.getElementById('myNameDisplay').textContent = id;
+          mySeat = 0;
           document.getElementById('star-0').classList.add('active');
           document.getElementById('star-0').setAttribute('data-name', 'TY (' + id + ')');
-          startVoiceDetection(myStream); startHeartbeat();
+          startVoiceDetection(myStream);
+          startHeartbeat(); 
         });
 
-        myPeer.on('call', call => { playSound(sndAnvil); call.answer(myStream); handleCall(call); });
-        myPeer.on('disconnected', () => myPeer.reconnect());
-      } catch(e) { alert("Povolte mikrofon!"); }
+        myPeer.on('call', call => {
+          playSound(sndAnvil);
+          call.answer(myStream);
+          handleCall(call);
+        });
+
+        myPeer.on('disconnected', () => { myPeer.reconnect(); });
+
+      } catch(e) { alert("Mikrofon je nutný!"); }
     });
 
     function handleCall(call) {
@@ -120,33 +264,42 @@
         const seatIndex = activePeers.size + 1;
         activePeers.set(call.peer, seatIndex);
         const s = document.getElementById('star-' + seatIndex);
-        if(s) { s.classList.add('active'); s.setAttribute('data-name', 'HOST (' + call.peer + ')'); }
+        if(s) {
+          s.classList.add('active');
+          s.setAttribute('data-name', 'HOST (' + call.peer + ')');
+        }
       }
 
       call.on('stream', remoteStream => {
-        let audio = document.getElementById('aud-' + call.peer);
+        // Vytvoření audio elementu přímo v DOMu pro zajištění přehrávání
+        let audio = document.getElementById('audio-' + call.peer);
         if (!audio) {
           audio = document.createElement('audio');
-          audio.id = 'aud-' + call.peer;
+          audio.id = 'audio-' + call.peer;
           audio.autoplay = true;
           document.body.appendChild(audio);
         }
         audio.srcObject = remoteStream;
-        audio.play().catch(() => {});
+        audio.play().catch(e => console.log("Nutná interakce pro zvuk"));
       });
 
       call.on('close', () => {
-        const idx = activePeers.get(call.peer);
-        if(idx) document.getElementById('star-' + idx).classList.remove('active');
-        activePeers.delete(call.peer);
-        const a = document.getElementById('aud-' + call.peer); if(a) a.remove();
-        if(activePeers.size === 0) document.getElementById('ui-panel').classList.remove('ui-hidden');
+          const idx = activePeers.get(call.peer);
+          if(idx) document.getElementById('star-' + idx).classList.remove('active');
+          const audio = document.getElementById('audio-' + call.peer);
+          if(audio) audio.remove();
+          activePeers.delete(call.peer);
+          if(activePeers.size === 0) document.getElementById('ui-panel').classList.remove('ui-hidden');
       });
     }
 
     document.getElementById('connectBtn').addEventListener('click', () => {
       const rId = document.getElementById('remoteIdInput').value;
-      if(rId && rId !== myPeer.id) { playSound(sndWood); const call = myPeer.call(rId, myStream); handleCall(call); }
+      if(rId && rId !== myPeer.id) {
+        playSound(sndWood);
+        const call = myPeer.call(rId, myStream);
+        handleCall(call);
+      }
     });
 
     function startVoiceDetection(stream) {
@@ -157,16 +310,20 @@
       function loop() {
         analyser.getByteFrequencyData(data);
         let avg = data.reduce((a,b)=>a+b)/data.length;
-        isSpeaking = avg > 15;
-        const s = document.getElementById('star-0');
-        if (s) { if (isSpeaking) s.classList.add('speaking'); else s.classList.remove('speaking'); }
+        isSpeaking = avg > 18;
+        const s = document.getElementById('star-' + mySeat);
+        if (s) {
+          if (isSpeaking) s.classList.add('speaking'); 
+          else s.classList.remove('speaking');
+        }
         requestAnimationFrame(loop);
       }
       loop();
     }
 
     document.addEventListener('mousemove', (e) => {
-      const x = (window.innerWidth / 2 - e.pageX) / 45, y = (window.innerHeight / 2 - e.pageY) / 45;
+      const x = (window.innerWidth / 2 - e.pageX) / 45;
+      const y = (window.innerHeight / 2 - e.pageY) / 45;
       container.style.transform = `translate(${x}px, ${y}px)`;
     });
   </script>
