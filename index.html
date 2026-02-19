@@ -143,7 +143,7 @@
     <button id="connectBtn">Vstoupit na Bifröst</button>
   </div>
 
-  <script>
+<script>
     const runes = ["ᚫ", "ᚱ", "ᚷ", "ᛞ", "ᛗ", "ᛟ", "ᚹ", "ᚻ", "ᚾ", "ᛁ", "ᛃ", "ᛒ"];
     const gods = ["ODIN", "THOR", "LOKI", "FREYA", "TYR", "BALDER", "HEIMDALL", "VIDAR", "VALI", "ULLR", "MAGNI", "MODI"];
     
@@ -152,22 +152,19 @@
     let myPeer, myStream;
     let activePeers = new Map();
 
-    // --- NOVÉ CC0 ZVUKY ---
-    const sndAnvil = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_7306e0659d.mp3'); // Kovadlina
-    const sndWood = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_c359670605.mp3');  // Úder do dřeva
+    const sndAnvil = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_7306e0659d.mp3');
+    const sndWood = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_c359670605.mp3');
     
     async function playSound(snd) {
       try {
-        // Inicializace audio kontextu pro prohlížeče
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') await audioCtx.resume();
-        
         snd.currentTime = 0;
         await snd.play();
-      } catch(e) { console.log("Audio play blocked"); }
+      } catch(e) { console.log("Audio blocked"); }
     }
 
-    // --- MATRIX ---
+    // MATRIX LOGIKA
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     let columns, drops;
@@ -195,16 +192,24 @@
     }
     setInterval(drawMatrix, 60);
 
-    // --- PEER CONFIG ---
+    // SPOJENÍ A HLÍDAČ PRO MOBILY
     const peerConfig = {
       'iceServers': [
         { 'urls': 'stun:stun.l.google.com:19302' },
-        { 'urls': 'stun:stun1.l.google.com:19302' },
-        { 'urls': 'stun:stun2.l.google.com:19302' }
-      ]
+        { 'urls': 'stun:stun1.l.google.com:19302' }
+      ],
+      'sdpSemantics': 'unified-plan'
     };
 
-    // --- GEN KRUHU ---
+    function startHeartbeat() {
+      setInterval(() => {
+        if (myPeer && !myPeer.destroyed && !myPeer.disconnected) {
+          myPeer.socket.send({type: 'HEARTBEAT'});
+        }
+      }, 5000);
+    }
+
+    // VYTVOŘENÍ KRUHU
     const container = document.getElementById('starsContainer');
     for (let i = 0; i < 12; i++) {
       const runeDiv = document.createElement('div');
@@ -218,12 +223,12 @@
       container.appendChild(runeDiv);
     }
 
-    // --- LOGIKA STARTU ---
+    // TLAČÍTKO START
     document.getElementById('startBtn').addEventListener('click', async () => {
       await playSound(sndWood);
       try {
         myStream = await navigator.mediaDevices.getUserMedia({ 
-          audio: { echoCancellation: true, noiseSuppression: true } 
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
         });
 
         const myName = gods[Math.floor(Math.random()*gods.length)];
@@ -241,6 +246,7 @@
           document.getElementById('star-0').classList.add('active');
           document.getElementById('star-0').setAttribute('data-name', 'TY (' + id + ')');
           startVoiceDetection(myStream);
+          startHeartbeat(); 
         });
 
         myPeer.on('call', call => {
@@ -249,7 +255,9 @@
           handleCall(call);
         });
 
-      } catch(e) { alert("Mikrofon je nutný pro vstup."); }
+        myPeer.on('disconnected', () => { myPeer.reconnect(); });
+
+      } catch(e) { alert("Mikrofon je nutný!"); }
     });
 
     function handleCall(call) {
@@ -266,7 +274,7 @@
       call.on('stream', s => { const a = new Audio(); a.srcObject = s; a.play(); });
       call.on('close', () => {
           const idx = activePeers.get(call.peer);
-          document.getElementById('star-' + idx).classList.remove('active');
+          if(idx) document.getElementById('star-' + idx).classList.remove('active');
           activePeers.delete(call.peer);
           if(activePeers.size === 0) document.getElementById('ui-panel').classList.remove('ui-hidden');
       });
@@ -289,7 +297,7 @@
       function loop() {
         analyser.getByteFrequencyData(data);
         let avg = data.reduce((a,b)=>a+b)/data.length;
-        isSpeaking = avg > 15;
+        isSpeaking = avg > 18;
         const s = document.getElementById('star-' + mySeat);
         if (s) {
           if (isSpeaking) s.classList.add('speaking'); 
@@ -299,6 +307,12 @@
       }
       loop();
     }
+
+    document.addEventListener('mousemove', (e) => {
+      const x = (window.innerWidth / 2 - e.pageX) / 45;
+      const y = (window.innerHeight / 2 - e.pageY) / 45;
+      container.style.transform = `translate(${x}px, ${y}px)`;
+    });
   </script>
 </body>
 </html>
