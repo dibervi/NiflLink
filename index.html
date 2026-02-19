@@ -47,7 +47,7 @@
       font-size: clamp(20px, 6vw, 32px);
       letter-spacing: 0.5em;
       color: #333; z-index: 6; margin: 0;
-      transition: letter-spacing 0.8s ease;
+      text-transform: uppercase;
     }
     h1 span { color: var(--gold); }
 
@@ -65,7 +65,6 @@
       color: var(--rune-stone);
       transition: all 0.4s ease;
       user-select: none;
-      cursor: help;
     }
 
     .star::after {
@@ -121,13 +120,9 @@
       transition: opacity 0.5s ease, transform 0.5s ease;
     }
 
-    .ui-hidden {
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(20px);
-    }
+    .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
 
-    input { background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 80%; outline: none; margin-bottom: 15px; text-align: center; font-weight: bold; letter-spacing: 1px; }
+    input { background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 80%; outline: none; margin-bottom: 15px; text-align: center; }
     button#connectBtn { background: var(--gold); border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; color: #1a1a1a; width: 80%; text-transform: uppercase; letter-spacing: 2px; }
   </style>
 </head>
@@ -160,14 +155,14 @@
 
     // --- ZVUKY ---
     const sndAnvil = new Audio('https://www.soundjay.com/mechanical/sounds/anvil-hit-01.mp3');
-    const sndWood = new Audio('https://www.soundjay.com/buttons/sounds/button-20.mp3'); // Simulace Gungniru
+    const sndWood = new Audio('https://www.soundjay.com/buttons/sounds/button-20.mp3');
     
     function playSound(snd) {
       snd.currentTime = 0;
       snd.play().catch(e => {});
     }
 
-    // --- MATRIX ---
+    // --- OPTIMALIZOVANÝ MATRIX ---
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     let columns, drops;
@@ -175,32 +170,37 @@
     function initMatrix() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      columns = Math.floor(canvas.width / 20);
+      columns = Math.floor(canvas.width / 25);
       drops = Array(columns).fill(1);
     }
     initMatrix();
     window.addEventListener('resize', initMatrix);
 
     function drawMatrix() {
-      ctx.fillStyle = "rgba(10, 10, 10, 0.15)";
+      ctx.fillStyle = "rgba(10, 10, 10, 0.2)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = isSpeaking ? "#bd9b5d" : "#1a1a1a"; 
-      ctx.font = "15px monospace";
+      ctx.fillStyle = isSpeaking ? "#bd9b5d" : "#111"; 
+      ctx.font = "14px monospace";
       for (let i = 0; i < drops.length; i++) {
         const text = runes[Math.floor(Math.random() * runes.length)];
-        ctx.fillText(text, i * 20, drops[i] * 20);
-        if (drops[i] * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i] += isSpeaking ? 3 : 1;
+        ctx.fillText(text, i * 25, drops[i] * 25);
+        if (drops[i] * 25 > canvas.height && Math.random() > 0.98) drops[i] = 0;
+        drops[i] += isSpeaking ? 2 : 1;
       }
     }
-    setInterval(drawMatrix, 50);
+    // Snížení frekvence překreslování pro úsporu CPU
+    setInterval(drawMatrix, 60);
 
-    // --- KONFIGURACE PEER ---
+    // --- POSÍLENÁ KONFIGURACE PROPOJENÍ ---
     const peerConfig = {
       'iceServers': [
         { 'urls': 'stun:stun.l.google.com:19302' },
-        { 'urls': 'stun:stun1.l.google.com:19302' }
-      ]
+        { 'urls': 'stun:stun1.l.google.com:19302' },
+        { 'urls': 'stun:stun2.l.google.com:19302' },
+        { 'urls': 'stun:stun3.l.google.com:19302' },
+        { 'urls': 'stun:stun4.l.google.com:19302' }
+      ],
+      'sdpSemantics': 'unified-plan'
     };
 
     // --- GENEROVÁNÍ KRUHU ---
@@ -217,11 +217,19 @@
       container.appendChild(runeDiv);
     }
 
-    // --- START ---
+    // --- START S VYČIŠTĚNÍM ZVUKU ---
     document.getElementById('startBtn').addEventListener('click', async () => {
       playSound(sndWood);
       try {
-        myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Vynucení filtrů pro čistý zvuk
+        myStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          } 
+        });
+
         const myName = gods[Math.floor(Math.random()*gods.length)];
         const myPin = Math.floor(1000+Math.random()*9000);
         const myCustomId = `${myName}-${myPin}`;
@@ -251,7 +259,6 @@
     function handleCall(call) {
       if (!activePeers.has(call.peer)) {
         playSound(sndAnvil);
-        // Skryjeme UI panel po úspěšném propojení
         document.getElementById('ui-panel').classList.add('ui-hidden');
         
         const seatIndex = activePeers.size + 1;
@@ -266,18 +273,15 @@
       call.on('stream', remoteStream => {
         const audio = new Audio();
         audio.srcObject = remoteStream;
+        // Důležité: Zamezení zpětné vazby u lokálního přehrávání
         audio.play();
       });
 
       call.on('close', () => {
         const idx = activePeers.get(call.peer);
         const s = document.getElementById('star-' + idx);
-        if(s) {
-          s.classList.remove('active');
-          s.removeAttribute('data-name');
-        }
+        if(s) { s.classList.remove('active'); s.removeAttribute('data-name'); }
         activePeers.delete(call.peer);
-        // Pokud nikdo nezbyl, panel se může zase objevit
         if(activePeers.size === 0) document.getElementById('ui-panel').classList.remove('ui-hidden');
       });
     }
@@ -299,7 +303,7 @@
       function loop() {
         analyser.getByteFrequencyData(data);
         let avg = data.reduce((a,b)=>a+b)/data.length;
-        isSpeaking = avg > 15;
+        isSpeaking = avg > 20; // Zvýšený práh citlivosti pro eliminaci okolního šumu
         const s = document.getElementById('star-' + mySeat);
         if (s) {
           if (isSpeaking) s.classList.add('speaking'); 
