@@ -2,18 +2,105 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
-  <title>Hlasový chat – jednoduchý</title>
+  <title>NiflLink – jednoduchý</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
-    body {font-family: Arial; text-align:center; padding:20px; background:#f0f0f0;}
-    button {padding:12px 24px; margin:10px; font-size:18px;}
-    .speaking {background:#ff4444; color:white; font-weight:bold;}
-    #peers {margin:20px; font-size:18px;}
-    .peer {display:inline-block; padding:8px 16px; margin:6px; background:#ddd; border-radius:20px;}
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+      min-height: 100vh;
+      color: #e0f7ff;
+      background: linear-gradient(to bottom, #0a001f 0%, #001133 40%, #0b1e3f 100%);
+      background-attachment: fixed;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: 
+        radial-gradient(white 1px, transparent 1px),
+        radial-gradient(white 1px, transparent 1px),
+        radial-gradient(white 1px, transparent 1px);
+      background-size: 60px 60px, 40px 40px, 80px 80px;
+      background-position: 0 0, 30px 30px, 15px 45px;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    #aurora {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 40%;
+      background: linear-gradient(to top,
+        rgba(0,255,200,0) 0%,
+        rgba(0,255,180,0.08) 30%,
+        rgba(100,255,220,0.15) 50%,
+        rgba(180,100,255,0.12) 70%,
+        rgba(255,80,180,0.08) 90%,
+        transparent 100%
+      );
+      opacity: 0.4;
+      transition: opacity 1.5s ease, transform 8s ease-in-out;
+      pointer-events: none;
+      filter: blur(40px);
+    }
+
+    body.speaking #aurora {
+      opacity: 0.85;
+      transform: scale(1.05);
+    }
+
+    h2 { color: #c0ffff; text-shadow: 0 0 10px #00ffcc; margin: 0.8em 0; }
+    button {
+      padding: 12px 28px;
+      margin: 12px;
+      font-size: 18px;
+      background: linear-gradient(#004d40, #00695c);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,255,200,0.3);
+      transition: all 0.3s;
+    }
+    button:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0,255,180,0.5); }
+    button.speaking {
+      background: linear-gradient(#b71c1c, #d32f2f);
+      box-shadow: 0 0 20px #ff5252;
+    }
+    .peer { 
+      display: inline-block;
+      padding: 8px 16px;
+      margin: 6px;
+      background: rgba(0,40,60,0.7);
+      border: 1px solid #00b8a9;
+      color: #e0ffff;
+      border-radius: 20px;
+    }
+    .speaking { 
+      background: rgba(180,0,80,0.8) !important;
+      border-color: #ff4081;
+      box-shadow: 0 0 15px #ff79b0;
+    }
+    #status, #peers { 
+      background: rgba(0,0,0,0.4);
+      padding: 12px;
+      border-radius: 10px;
+      margin: 1em auto;
+      max-width: 600px;
+    }
   </style>
 </head>
 <body>
-  <h2>Hlasový chat</h2>
+
+  <div id="aurora"></div>
+
+  <h2>NiflLink</h2>
   
   <input id="myname" placeholder="Zadej své jméno" value="Filip">
   <button onclick="connect()">Povolit mikrofon a připojit</button>
@@ -28,26 +115,25 @@
 
   <script>
     let myPeer, myStream, myId, myName = "";
-    let peers = {};           // {id: {name, call, isTalking}}
+    let peers = {};
     let isTalking = false;
 
     const urlParams = new URLSearchParams(window.location.search);
     myName = urlParams.get('name') || "Anonym";
-
     document.getElementById("myname").value = myName;
 
     async function connect() {
       myName = document.getElementById("myname").value.trim() || "Anonym";
-      
       try {
-        myStream = await navigator.mediaDevices.getUserMedia({audio:true});
+        myStream = await navigator.mediaDevices.getUserMedia({audio: true});
         document.getElementById("status").innerText = "Připojeno! Čekám na ostatní...";
         
         myPeer = new Peer();
         
         myPeer.on('open', id => {
           myId = id;
-          document.getElementById("status").innerHTML = `Tvé ID: <b>${id}</b><br>Jméno: <b>${myName}</b><br>Odkaz pro ostatní: ${location.origin + location.pathname}?name=`;
+          document.getElementById("status").innerHTML = 
+            `Tvé ID: <b>${id}</b><br>Jméno: <b>${myName}</b><br>Odkaz: ${location.origin + location.pathname}?name=`;
           document.getElementById("talkBtn").style.display = "inline-block";
           document.getElementById("talkBtn").disabled = false;
         });
@@ -64,15 +150,12 @@
 
     function handleNewPeer(peerId, call = null) {
       if (peers[peerId]) return;
-      
       peers[peerId] = {name: "?", call, isTalking: false};
-      
       if (!call) {
         const outgoing = myPeer.call(peerId, myStream);
         outgoing.on('stream', () => {});
         peers[peerId].call = outgoing;
       }
-
       updatePeersList();
     }
 
@@ -81,39 +164,37 @@
       div.innerHTML = "<b>Připojeni:</b><br>";
       for (let id in peers) {
         let cls = peers[id].isTalking ? "peer speaking" : "peer";
-        div.innerHTML += `<span class="${cls}">${peers[id].name || id.slice(0,6)}</span> `;
+        div.innerHTML += `<span class="${cls}">${peers[id].name || id.slice(0,6)}</span>`;
       }
     }
 
     function toggleTalk() {
       isTalking = !isTalking;
+      document.body.classList.toggle("speaking", isTalking);
       document.getElementById("talkBtn").innerText = isTalking ? "Přestaň mluvit" : "Mluvím teď";
       document.getElementById("talkBtn").className = isTalking ? "speaking" : "";
 
-      // Pošleme info všem (použijeme data channel – jednoduchá verze)
       Object.values(peers).forEach(p => {
         if (p.call && p.call.open) {
           p.call.peerConnection?.getDataChannels()?.[0]?.send(JSON.stringify({
-            type: "talking", value: isTalking, name: myName
+            type: "talking",
+            value: isTalking,
+            name: myName
           }));
         }
       });
     }
 
-    // Příjem dat (pro zobrazení jmen a mluvčího)
     myPeer?.on('connection', conn => {
       conn.on('data', data => {
-        if (data.type === "talking") {
-          if (peers[conn.peer]) {
-            peers[conn.peer].isTalking = data.value;
-            peers[conn.peer].name = data.name || peers[conn.peer].name;
-            updatePeersList();
-          }
+        if (data.type === "talking" && peers[conn.peer]) {
+          peers[conn.peer].isTalking = data.value;
+          peers[conn.peer].name = data.name || peers[conn.peer].name;
+          updatePeersList();
         }
       });
     });
 
-    // Automatické přidání při příchozím callu
     myPeer?.on('call', call => {
       call.answer(myStream);
       handleNewPeer(call.peer, call);
