@@ -64,7 +64,7 @@
       position: absolute;
       font-size: clamp(18px, 5vmin, 38px);
       color: var(--rune-stone);
-      transition: all 0.4s ease;
+      transition: all 0.3s ease;
       user-select: none;
     }
 
@@ -89,12 +89,14 @@
       50% { opacity: 0.8; transform: scale(1.05); }
     }
 
+    /* Styl pro mluvícího člena */
     .star.speaking {
       animation: none !important;
       color: var(--fire) !important;
-      text-shadow: 0 0 20px var(--fire), 0 0 40px var(--fire);
-      transform: scale(1.4) !important;
+      text-shadow: 0 0 15px var(--fire), 0 0 30px var(--fire);
+      transform: scale(1.5) !important;
       opacity: 1 !important;
+      z-index: 100;
     }
 
     .center-button {
@@ -120,13 +122,12 @@
       border-radius: 20px; backdrop-filter: blur(15px);
       border: 1px solid rgba(189,155,93,0.3);
       width: 85%; max-width: 400px;
-      transition: opacity 0.5s ease, transform 0.5s ease;
     }
 
-    .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+    .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(20px); transition: 0.5s; }
 
     input { background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 80%;
-    outline: none; margin-bottom: 15px; text-align: center; }
+    outline: none; margin-bottom: 15px; text-align: center; font-family: monospace; }
     button#connectBtn { background: var(--gold); border: none; padding: 12px 25px;
     border-radius: 10px; cursor: pointer; font-weight: bold; color: #1a1a1a; width: 80%; text-transform: uppercase; letter-spacing: 2px;
     }
@@ -152,10 +153,11 @@
 
   <script>
     const runes = ["ᚫ", "ᚱ", "ᚷ", "ᛞ", "ᛗ", "ᛟ", "ᚹ", "ᚻ", "ᚾ", "ᛁ", "ᛃ", "ᛒ"];
-    let mySeat = -1;
-    let isSpeaking = false;
+    let mySeat = 0;
+    let isSpeakingAny = false;
     let myPeer, myStream;
-    let activePeers = new Map();
+    let activePeers = new Map(); // Mapa pro ukládání informací o připojených (peerId -> seatIndex)
+    
     const sndAnvil = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_7306e0659d.mp3');
     const sndWood = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_c359670605.mp3');
 
@@ -165,10 +167,10 @@
         if (audioCtx.state === 'suspended') await audioCtx.resume();
         snd.currentTime = 0;
         await snd.play();
-      } catch(e) { console.log("Audio blocked"); }
+      } catch(e) {}
     }
 
-    // MATRIX
+    // MATRIX POZADÍ
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     let columns, drops;
@@ -185,33 +187,18 @@
     function drawMatrix() {
       ctx.fillStyle = "rgba(10, 10, 10, 0.2)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = isSpeaking ? "#bd9b5d" : "#111"; 
+      ctx.fillStyle = isSpeakingAny ? "#bd9b5d" : "#111"; 
       ctx.font = "14px monospace";
       for (let i = 0; i < drops.length; i++) {
         const text = runes[Math.floor(Math.random() * runes.length)];
         ctx.fillText(text, i * 25, drops[i] * 25);
         if (drops[i] * 25 > canvas.height && Math.random() > 0.98) drops[i] = 0;
-        drops[i] += isSpeaking ? 2 : 1;
+        drops[i] += isSpeakingAny ? 2 : 1;
       }
     }
     setInterval(drawMatrix, 60);
 
-    const peerConfig = {
-      'iceServers': [
-        { 'urls': 'stun:stun.l.google.com:19302' },
-        { 'urls': 'stun:stun1.l.google.com:19302' }
-      ],
-      'sdpSemantics': 'unified-plan'
-    };
-
-    function startHeartbeat() {
-      setInterval(() => {
-        if (myPeer && !myPeer.destroyed && !myPeer.disconnected) {
-          myPeer.socket.send({type: 'HEARTBEAT'});
-        }
-      }, 5000);
-    }
-
+    // RUNE LAYOUT
     const container = document.getElementById('starsContainer');
     for (let i = 0; i < 12; i++) {
       const runeDiv = document.createElement('div');
@@ -225,6 +212,7 @@
       container.appendChild(runeDiv);
     }
 
+    // START
     document.getElementById('startBtn').addEventListener('click', async () => {
       await playSound(sndWood);
       try {
@@ -233,18 +221,20 @@
         });
 
         const myPin = Math.floor(1000 + Math.random() * 9000).toString();
-        myPeer = new Peer(myPin, { config: peerConfig });
+        myPeer = new Peer(myPin);
 
         myPeer.on('open', (id) => {
-          document.getElementById('startBtn').style.opacity = "0.2";
+          document.getElementById('startBtn').style.opacity = "0.1";
           document.getElementById('startBtn').style.pointerEvents = "none";
           document.getElementById('ui-panel').style.display = "block";
           document.getElementById('myNameDisplay').textContent = id;
-          mySeat = 0;
-          document.getElementById('star-0').classList.add('active');
-          document.getElementById('star-0').setAttribute('data-name', 'TY (' + id + ')');
-          startVoiceDetection(myStream);
-          startHeartbeat(); 
+          
+          const s = document.getElementById('star-0');
+          s.classList.add('active');
+          s.setAttribute('data-name', 'TY (' + id + ')');
+          
+          // Detekce hlasu pro MNE
+          attachVoiceDetection(myStream, 0);
         });
 
         myPeer.on('call', call => {
@@ -253,25 +243,29 @@
           handleCall(call);
         });
 
-        myPeer.on('disconnected', () => { myPeer.reconnect(); });
-
-      } catch(e) { alert("Mikrofon je nutný!"); }
+      } catch(e) { alert("Povolte prosím mikrofon."); }
     });
 
     function handleCall(call) {
+      let seatIdx;
+      
+      // Pokud uživatel ještě nemá sedadlo, přidělíme mu ho
       if (!activePeers.has(call.peer)) {
-        document.getElementById('ui-panel').classList.add('ui-hidden');
-        const seatIndex = activePeers.size + 1;
-        activePeers.set(call.peer, seatIndex);
-        const s = document.getElementById('star-' + seatIndex);
+        seatIdx = activePeers.size + 1; // Sedadlo 1, 2, 3... (0 je moje)
+        activePeers.set(call.peer, seatIdx);
+        
+        const s = document.getElementById('star-' + seatIdx);
         if(s) {
           s.classList.add('active');
           s.setAttribute('data-name', 'HOST (' + call.peer + ')');
+          document.getElementById('ui-panel').classList.add('ui-hidden');
         }
+      } else {
+        seatIdx = activePeers.get(call.peer);
       }
 
       call.on('stream', remoteStream => {
-        // Vytvoření audio elementu přímo v DOMu pro zajištění přehrávání
+        // Přehrávání zvuku
         let audio = document.getElementById('audio-' + call.peer);
         if (!audio) {
           audio = document.createElement('audio');
@@ -280,16 +274,21 @@
           document.body.appendChild(audio);
         }
         audio.srcObject = remoteStream;
-        audio.play().catch(e => console.log("Nutná interakce pro zvuk"));
+
+        // DŮLEŽITÉ: Spuštění detekce hlasu pro tohoto hosta
+        attachVoiceDetection(remoteStream, seatIdx);
       });
 
       call.on('close', () => {
-          const idx = activePeers.get(call.peer);
-          if(idx) document.getElementById('star-' + idx).classList.remove('active');
-          const audio = document.getElementById('audio-' + call.peer);
-          if(audio) audio.remove();
-          activePeers.delete(call.peer);
-          if(activePeers.size === 0) document.getElementById('ui-panel').classList.remove('ui-hidden');
+        const idx = activePeers.get(call.peer);
+        const s = document.getElementById('star-' + idx);
+        if(s) {
+            s.classList.remove('active');
+            s.classList.remove('speaking');
+        }
+        const audio = document.getElementById('audio-' + call.peer);
+        if(audio) audio.remove();
+        activePeers.delete(call.peer);
       });
     }
 
@@ -302,30 +301,39 @@
       }
     });
 
-    function startVoiceDetection(stream) {
-      const aCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const analyser = aCtx.createAnalyser();
-      aCtx.createMediaStreamSource(stream).connect(analyser);
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      function loop() {
-        analyser.getByteFrequencyData(data);
-        let avg = data.reduce((a,b)=>a+b)/data.length;
-        isSpeaking = avg > 18;
-        const s = document.getElementById('star-' + mySeat);
-        if (s) {
-          if (isSpeaking) s.classList.add('speaking'); 
-          else s.classList.remove('speaking');
-        }
-        requestAnimationFrame(loop);
-      }
-      loop();
-    }
+    // UNIVERZÁLNÍ DETEKCE HLASU PRO JAKÝKOLIV STREAM A SEDADLO
+    function attachVoiceDetection(stream, seatIndex) {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = audioCtx.createAnalyser();
+      const source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+      
+      analyser.fftSize = 256;
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      const runeElement = document.getElementById('star-' + seatIndex);
 
-    document.addEventListener('mousemove', (e) => {
-      const x = (window.innerWidth / 2 - e.pageX) / 45;
-      const y = (window.innerHeight / 2 - e.pageY) / 45;
-      container.style.transform = `translate(${x}px, ${y}px)`;
-    });
+      function checkVoice() {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        let average = sum / bufferLength;
+
+        // Citlivost (15-20 je ideální pro běžný hovor)
+        if (average > 15) {
+          runeElement.classList.add('speaking');
+          if (seatIndex === 0) isSpeakingAny = true; // Pro matrix efekt
+        } else {
+          runeElement.classList.remove('speaking');
+          if (seatIndex === 0) isSpeakingAny = false;
+        }
+        requestAnimationFrame(checkVoice);
+      }
+      checkVoice();
+    }
   </script>
 </body>
 </html>
