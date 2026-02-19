@@ -6,140 +6,33 @@
   <title>Nifl-Link</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
-    :root {
-      --gold: #bd9b5d;
-      --bg: #0a0a0a;
-      --rune-stone: #222;
-      --fire: #ff8800;
-    }
-
-    body, html {
-      margin: 0; padding: 0;
-      width: 100%; height: 100%;
-      background-color: var(--bg);
-      color: #e0e0e0;
-      font-family: "Segoe UI", sans-serif;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden; position: relative;
-    }
-
-    #matrixCanvas {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 0; opacity: 0.12;
-    }
-
-    .grain {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: url('https://grainy-gradients.vercel.app/noise.svg');
-      opacity: 0.04; pointer-events: none; z-index: 10;
-    }
-
-    body::after {
-      content: ""; position: absolute; inset: 0;
-      background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 100%);
-      pointer-events: none; z-index: 5;
-    }
-
-    h1 {
-      position: absolute;
-      top: 5vh;
-      font-size: clamp(20px, 6vw, 32px);
-      letter-spacing: 0.5em;
-      color: #333; z-index: 6; margin: 0;
-      text-transform: uppercase;
-    }
+    :root { --gold: #bd9b5d; --bg: #0a0a0a; --rune-stone: #222; --fire: #ff8800; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--bg); color: #e0e0e0; font-family: "Segoe UI", sans-serif; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+    #matrixCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.12; pointer-events: none; }
+    .grain { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.04; pointer-events: none; z-index: 10; }
+    body::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 100%); pointer-events: none; z-index: 5; }
+    h1 { position: absolute; top: 5vh; font-size: clamp(20px, 6vw, 32px); letter-spacing: 0.5em; color: #333; z-index: 6; margin: 0; text-transform: uppercase; }
     h1 span { color: var(--gold); }
-
-    .stars-container {
-      position: relative;
-      width: 85vmin; height: 85vmin;
-      display: flex;
-      align-items: center; justify-content: center;
-      z-index: 4;
-    }
-
-    .star {
-      position: absolute;
-      font-size: clamp(18px, 5vmin, 38px);
-      color: var(--rune-stone);
-      transition: all 0.3s ease;
-      user-select: none;
-    }
-
-    .star::after {
-      content: attr(data-name);
-      position: absolute;
-      top: 120%; left: 50%;
-      transform: translateX(-50%);
-      font-size: 10px;
-      letter-spacing: 1px;
-      color: var(--gold);
-      opacity: 0;
-      transition: opacity 0.4s ease;
-      white-space: nowrap;
-    }
-
+    .stars-container { position: relative; width: 85vmin; height: 85vmin; display: flex; align-items: center; justify-content: center; z-index: 4; }
+    .star { position: absolute; font-size: clamp(18px, 5vmin, 38px); color: var(--rune-stone); transition: all 0.3s ease; user-select: none; }
+    .star::after { content: attr(data-name); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); font-size: 10px; letter-spacing: 1px; color: var(--gold); opacity: 0; transition: opacity 0.4s ease; white-space: nowrap; }
     .star.active { color: var(--gold); animation: breathe 5s infinite; }
-    
-    @keyframes breathe {
-      0%, 100% { opacity: 0.4; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.05); }
-    }
-
-    .star.speaking {
-      animation: none !important;
-      color: var(--fire) !important;
-      text-shadow: 0 0 15px var(--fire), 0 0 30px var(--fire);
-      transform: scale(1.5) !important;
-      opacity: 1 !important;
-      z-index: 100;
-    }
-
-    .center-button {
-      z-index: 10;
-      width: 25vmin; height: 25vmin;
-      max-width: 130px;
-      max-height: 130px;
-      font-size: clamp(30px, 8vmin, 50px);
-      background: linear-gradient(145deg, #bd9b5d, #8a6d3b);
-      color: #1a1a1a;
-      border: none; border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 0 30px rgba(0,0,0,0.5);
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.5s ease;
-    }
-
-    #ui-panel {
-      display: none; position: absolute; bottom: 8vh;
-      z-index: 7;
-      text-align: center;
-      background: rgba(0,0,0,0.85); padding: 20px;
-      border-radius: 20px; backdrop-filter: blur(15px);
-      border: 1px solid rgba(189,155,93,0.3);
-      width: 85%; max-width: 400px;
-    }
-
-    input { background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 80%;
-    outline: none; margin-bottom: 15px; text-align: center; font-family: monospace; }
-    button#connectBtn { background: var(--gold); border: none; padding: 12px 25px;
-    border-radius: 10px; cursor: pointer; font-weight: bold; color: #1a1a1a; width: 80%; text-transform: uppercase; letter-spacing: 2px;
-    }
+    .star.active::after { opacity: 1; }
+    @keyframes breathe { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
+    .star.speaking { animation: none !important; color: var(--fire) !important; text-shadow: 0 0 15px var(--fire); transform: scale(1.4) !important; opacity: 1 !important; z-index: 100; }
+    .center-button { z-index: 10; width: 25vmin; height: 25vmin; max-width: 130px; max-height: 130px; font-size: clamp(30px, 8vmin, 50px); background: linear-gradient(145deg, #bd9b5d, #8a6d3b); color: #1a1a1a; border: none; border-radius: 50%; cursor: pointer; box-shadow: 0 0 30px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+    #ui-panel { display: none; position: absolute; bottom: 8vh; z-index: 7; text-align: center; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 20px; backdrop-filter: blur(15px); border: 1px solid rgba(189,155,93,0.3); width: 85%; max-width: 400px; }
+    input { background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 80%; outline: none; margin-bottom: 15px; text-align: center; font-family: monospace; }
+    button#connectBtn { background: var(--gold); border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; color: #1a1a1a; width: 80%; text-transform: uppercase; letter-spacing: 2px; }
   </style>
 </head>
 <body>
-
   <canvas id="matrixCanvas"></canvas>
   <div class="grain"></div>
-
   <h1>NIFL-<span>LINK</span></h1>
-
   <div class="stars-container" id="starsContainer">
     <button class="center-button" id="startBtn">ᚫ</button>
   </div>
-
   <div id="ui-panel">
     <div style="font-size: 0.7em; margin-bottom: 5px; letter-spacing: 2px; color: #666;">AKTIVNÍ SNĚM</div>
     <div id="myNameDisplay" style="color:var(--gold); font-weight:bold; font-size: 2em; margin-bottom: 15px; letter-spacing: 5px;"></div>
@@ -153,13 +46,7 @@
     let activePeers = new Map();
     let isAnyoneSpeaking = false;
 
-    // Inicializace Audio Contextu (nutné pro detekci hlasu, ne pro přehrávání zvuků)
-    async function initAudio() {
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') await audioContext.resume();
-    }
-
-    // MATRIX 
+    // --- MATRIX ---
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     let columns, drops;
@@ -167,9 +54,7 @@
       canvas.width = window.innerWidth; canvas.height = window.innerHeight;
       columns = Math.floor(canvas.width / 25); drops = Array(columns).fill(1);
     }
-    initMatrix();
-    window.onresize = initMatrix;
-
+    initMatrix(); window.onresize = initMatrix;
     function drawMatrix() {
       ctx.fillStyle = "rgba(10, 10, 10, 0.2)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = isAnyoneSpeaking ? "#bd9b5d" : "#111";
@@ -181,7 +66,7 @@
     }
     setInterval(drawMatrix, 60);
 
-    // LAYOUT RUN
+    // --- LAYOUT ---
     for (let i = 0; i < 12; i++) {
       const r = document.createElement('div');
       r.className = 'star'; r.id = 'star-' + i; r.textContent = runes[i];
@@ -191,74 +76,89 @@
       document.getElementById('starsContainer').appendChild(r);
     }
 
-    // START TLAČÍTKO
-    document.getElementById('startBtn').addEventListener('click', async () => {
-      await initAudio();
+    // --- CORE LOGIC ---
+    document.getElementById('startBtn').onclick = async () => {
       try {
-        myStream = await navigator.mediaDevices.getUserMedia({ 
-          audio: { echoCancellation: true, noiseSuppression: true } 
-        });
+        myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
-        const myPin = Math.floor(1000 + Math.random() * 9000).toString();
-        myPeer = new Peer(myPin);
+        const pin = Math.floor(1000 + Math.random() * 9000).toString();
+        myPeer = new Peer(pin);
         
         myPeer.on('open', id => {
           document.getElementById('startBtn').style.display = "none";
           document.getElementById('ui-panel').style.display = "block";
           document.getElementById('myNameDisplay').textContent = id;
-          document.getElementById('star-0').classList.add('active');
-          document.getElementById('star-0').setAttribute('data-name', 'TY ('+id+')');
+          updateStar(0, 'TY ('+id+')', true);
           attachVoice(myStream, 0);
-          
-          setInterval(() => { if(myPeer && !myPeer.disconnected) myPeer.socket.send({type:'heartbeat'}); }, 5000);
         });
 
         myPeer.on('call', call => {
           call.answer(myStream);
           handleCall(call);
         });
-      } catch(e) { alert("Povolte mikrofon v nastavení prohlížeče!"); }
-    });
+
+        myPeer.on('disconnected', () => myPeer.reconnect());
+      } catch(e) { alert("Mikrofon je nezbytný pro vstup do sněmu."); }
+    };
 
     function handleCall(call) {
-      if (!activePeers.has(call.peer)) {
-        const idx = activePeers.size + 1;
-        activePeers.set(call.peer, idx);
-        const s = document.getElementById('star-' + idx);
-        if(s) { 
-            s.classList.add('active'); 
-            s.setAttribute('data-name', 'HOST ('+call.peer+')'); 
-            document.getElementById('ui-panel').style.display = "none";
-        }
-      }
       call.on('stream', stream => {
-        let a = document.getElementById('audio-' + call.peer) || document.createElement('audio');
-        a.id = 'audio-' + call.peer; a.autoplay = true; a.srcObject = stream;
-        a.setAttribute('playsinline', 'true');
-        document.body.appendChild(a);
-        attachVoice(stream, activePeers.get(call.peer));
+        if (!activePeers.has(call.peer)) {
+          const seat = activePeers.size + 1;
+          activePeers.set(call.peer, { seat, stream });
+          updateStar(seat, 'HOST ('+call.peer+')', true);
+          
+          let a = document.getElementById('audio-' + call.peer) || document.createElement('audio');
+          a.id = 'audio-' + call.peer; a.autoplay = true; a.srcObject = stream;
+          a.setAttribute('playsinline', 'true');
+          document.body.appendChild(a);
+          attachVoice(stream, seat);
+        }
       });
+      call.on('close', () => removePeer(call.peer));
     }
 
     document.getElementById('connectBtn').onclick = () => {
       const val = document.getElementById('remoteIdInput').value;
-      if(val) {
+      if(val && val !== myPeer.id) {
+        document.getElementById('connectBtn').textContent = "PŘIPOJOVÁNÍ...";
         const call = myPeer.call(val, myStream);
         handleCall(call);
+        setTimeout(() => document.getElementById('connectBtn').textContent = "Vstoupit na Bifröst", 2000);
       }
     };
 
+    function updateStar(id, name, active) {
+      const el = document.getElementById('star-' + id);
+      if (el) {
+        if (active) { el.classList.add('active'); el.setAttribute('data-name', name); }
+        else { el.classList.remove('active', 'speaking'); el.removeAttribute('data-name'); }
+      }
+    }
+
+    function removePeer(peerId) {
+      const data = activePeers.get(peerId);
+      if (data) {
+        updateStar(data.seat, '', false);
+        const aud = document.getElementById('audio-' + peerId);
+        if (aud) aud.remove();
+        activePeers.delete(peerId);
+      }
+    }
+
     function attachVoice(stream, seat) {
-      initAudio();
       const analyser = audioContext.createAnalyser();
-      audioContext.createMediaStreamSource(stream).connect(analyser);
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
       const data = new Uint8Array(analyser.frequencyBinCount);
       const el = document.getElementById('star-' + seat);
 
       function check() {
+        if (!el.classList.contains('active')) return;
         analyser.getByteFrequencyData(data);
         const avg = data.reduce((a,b)=>a+b)/data.length;
-        if(avg > 15) el.classList.add('speaking'); else el.classList.remove('speaking');
+        if(avg > 12) el.classList.add('speaking'); else el.classList.remove('speaking');
         isAnyoneSpeaking = !!document.querySelector('.star.speaking');
         requestAnimationFrame(check);
       }
