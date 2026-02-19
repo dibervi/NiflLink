@@ -89,7 +89,6 @@
       50% { opacity: 0.8; transform: scale(1.05); }
     }
 
-    /* Styl pro mluvícího člena */
     .star.speaking {
       animation: none !important;
       color: var(--fire) !important;
@@ -154,23 +153,32 @@
   <script>
     const runes = ["ᚫ", "ᚱ", "ᚷ", "ᛞ", "ᛗ", "ᛟ", "ᚹ", "ᚻ", "ᚾ", "ᛁ", "ᛃ", "ᛒ"];
     let mySeat = 0;
-    let isSpeakingAny = false;
+    let isAnyoneSpeaking = false;
     let myPeer, myStream;
-    let activePeers = new Map(); // Mapa pro ukládání informací o připojených (peerId -> seatIndex)
+    let activePeers = new Map();
+    let audioContext;
     
     const sndAnvil = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_7306e0659d.mp3');
     const sndWood = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_c359670605.mp3');
 
-    async function playSound(snd) {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') await audioCtx.resume();
-        snd.currentTime = 0;
-        await snd.play();
-      } catch(e) {}
+    async function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
     }
 
-    // MATRIX POZADÍ
+    async function playSound(snd) {
+      await initAudio();
+      try {
+        snd.currentTime = 0;
+        await snd.play();
+      } catch(e) { console.log("Sound play failed", e); }
+    }
+
+    // MATRIX
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     let columns, drops;
@@ -187,13 +195,13 @@
     function drawMatrix() {
       ctx.fillStyle = "rgba(10, 10, 10, 0.2)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = isSpeakingAny ? "#bd9b5d" : "#111"; 
+      ctx.fillStyle = isAnyoneSpeaking ? "#bd9b5d" : "#111"; 
       ctx.font = "14px monospace";
       for (let i = 0; i < drops.length; i++) {
         const text = runes[Math.floor(Math.random() * runes.length)];
         ctx.fillText(text, i * 25, drops[i] * 25);
         if (drops[i] * 25 > canvas.height && Math.random() > 0.98) drops[i] = 0;
-        drops[i] += isSpeakingAny ? 2 : 1;
+        drops[i] += isAnyoneSpeaking ? 2 : 1;
       }
     }
     setInterval(drawMatrix, 60);
@@ -214,6 +222,7 @@
 
     // START
     document.getElementById('startBtn').addEventListener('click', async () => {
+      await initAudio();
       await playSound(sndWood);
       try {
         myStream = await navigator.mediaDevices.getUserMedia({ 
@@ -233,7 +242,6 @@
           s.classList.add('active');
           s.setAttribute('data-name', 'TY (' + id + ')');
           
-          // Detekce hlasu pro MNE
           attachVoiceDetection(myStream, 0);
         });
 
@@ -243,15 +251,13 @@
           handleCall(call);
         });
 
-      } catch(e) { alert("Povolte prosím mikrofon."); }
+      } catch(e) { alert("Chyba: Mikrofon nebyl nalezen nebo povolen."); }
     });
 
     function handleCall(call) {
       let seatIdx;
-      
-      // Pokud uživatel ještě nemá sedadlo, přidělíme mu ho
       if (!activePeers.has(call.peer)) {
-        seatIdx = activePeers.size + 1; // Sedadlo 1, 2, 3... (0 je moje)
+        seatIdx = activePeers.size + 1;
         activePeers.set(call.peer, seatIdx);
         
         const s = document.getElementById('star-' + seatIdx);
@@ -265,34 +271,32 @@
       }
 
       call.on('stream', remoteStream => {
-        // Přehrávání zvuku
         let audio = document.getElementById('audio-' + call.peer);
         if (!audio) {
           audio = document.createElement('audio');
           audio.id = 'audio-' + call.peer;
           audio.autoplay = true;
+          audio.setAttribute('playsinline', 'true');
           document.body.appendChild(audio);
         }
         audio.srcObject = remoteStream;
+        audio.play().catch(e => console.log("Auto-play blocked, waiting for interaction"));
 
-        // DŮLEŽITÉ: Spuštění detekce hlasu pro tohoto hosta
         attachVoiceDetection(remoteStream, seatIdx);
       });
 
       call.on('close', () => {
         const idx = activePeers.get(call.peer);
         const s = document.getElementById('star-' + idx);
-        if(s) {
-            s.classList.remove('active');
-            s.classList.remove('speaking');
-        }
+        if(s) { s.classList.remove('active'); s.classList.remove('speaking'); }
         const audio = document.getElementById('audio-' + call.peer);
         if(audio) audio.remove();
         activePeers.delete(call.peer);
       });
     }
 
-    document.getElementById('connectBtn').addEventListener('click', () => {
+    document.getElementById('connectBtn').addEventListener('click', async () => {
+      await initAudio();
       const rId = document.getElementById('remoteIdInput').value;
       if(rId && rId !== myPeer.id) {
         playSound(sndWood);
@@ -301,14 +305,14 @@
       }
     });
 
-    // UNIVERZÁLNÍ DETEKCE HLASU PRO JAKÝKOLIV STREAM A SEDADLO
     function attachVoiceDetection(stream, seatIndex) {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const analyser = audioCtx.createAnalyser();
-      const source = audioCtx.createMediaStreamSource(stream);
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaStreamSource(stream);
       source.connect(analyser);
       
-      analyser.fftSize = 256;
+      analyser.fftSize = 64;
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
       
@@ -317,23 +321,32 @@
       function checkVoice() {
         analyser.getByteFrequencyData(dataArray);
         let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          sum += dataArray[i];
-        }
+        for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
         let average = sum / bufferLength;
 
-        // Citlivost (15-20 je ideální pro běžný hovor)
-        if (average > 15) {
+        if (average > 20) {
           runeElement.classList.add('speaking');
-          if (seatIndex === 0) isSpeakingAny = true; // Pro matrix efekt
+          isAnyoneSpeaking = true;
         } else {
           runeElement.classList.remove('speaking');
-          if (seatIndex === 0) isSpeakingAny = false;
+          // Kontrola, jestli mluví aspoň někdo jiný pro matrix
+          updateGlobalSpeakingStatus();
         }
         requestAnimationFrame(checkVoice);
       }
       checkVoice();
     }
+
+    function updateGlobalSpeakingStatus() {
+      const allSpeaking = document.querySelectorAll('.star.speaking');
+      isAnyoneSpeaking = allSpeaking.length > 0;
+    }
+
+    document.addEventListener('mousemove', (e) => {
+      const x = (window.innerWidth / 2 - e.pageX) / 45;
+      const y = (window.innerHeight / 2 - e.pageY) / 45;
+      container.style.transform = `translate(${x}px, ${y}px)`;
+    });
   </script>
 </body>
 </html>
