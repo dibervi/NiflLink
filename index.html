@@ -138,14 +138,13 @@
 
   <div id="ui-panel">
     <div style="font-size: 0.7em; margin-bottom: 5px; letter-spacing: 2px; color: #666;">AKTIVNÍ SNĚM</div>
-    <div id="myNameDisplay" style="color:var(--gold); font-weight:bold; font-size: 1.2em; margin-bottom: 15px; letter-spacing: 1px;"></div>
-    <input type="text" id="remoteIdInput" placeholder="ZADEJ CÍL CESTY">
+    <div id="myNameDisplay" style="color:var(--gold); font-weight:bold; font-size: 2em; margin-bottom: 15px; letter-spacing: 5px;"></div>
+    <input type="tel" id="remoteIdInput" placeholder="ZADEJ PIN" maxlength="4" style="font-size: 24px; letter-spacing: 8px;">
     <button id="connectBtn">Vstoupit na Bifröst</button>
   </div>
 
-<script>
+  <script>
     const runes = ["ᚫ", "ᚱ", "ᚷ", "ᛞ", "ᛗ", "ᛟ", "ᚹ", "ᚻ", "ᚾ", "ᛁ", "ᛃ", "ᛒ"];
-    const gods = ["ODIN", "THOR", "LOKI", "FREYA", "TYR", "BALDER", "HEIMDALL", "VIDAR", "VALI", "ULLR", "MAGNI", "MODI"];
     
     let mySeat = -1;
     let isSpeaking = false;
@@ -164,7 +163,7 @@
       } catch(e) { console.log("Audio blocked"); }
     }
 
-    // MATRIX LOGIKA
+    // MATRIX
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     let columns, drops;
@@ -192,7 +191,6 @@
     }
     setInterval(drawMatrix, 60);
 
-    // SPOJENÍ A HLÍDAČ PRO MOBILY
     const peerConfig = {
       'iceServers': [
         { 'urls': 'stun:stun.l.google.com:19302' },
@@ -209,7 +207,6 @@
       }, 5000);
     }
 
-    // VYTVOŘENÍ KRUHU
     const container = document.getElementById('starsContainer');
     for (let i = 0; i < 12; i++) {
       const runeDiv = document.createElement('div');
@@ -223,7 +220,6 @@
       container.appendChild(runeDiv);
     }
 
-    // TLAČÍTKO START
     document.getElementById('startBtn').addEventListener('click', async () => {
       await playSound(sndWood);
       try {
@@ -231,11 +227,10 @@
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
         });
 
-        const myName = gods[Math.floor(Math.random()*gods.length)];
-        const myPin = Math.floor(1000+Math.random()*9000);
-        const myCustomId = `${myName}-${myPin}`;
+        // Tady je ta změna: Generujeme pouze 4 čísla
+        const myPin = Math.floor(1000 + Math.random() * 9000).toString();
 
-        myPeer = new Peer(myCustomId, { config: peerConfig });
+        myPeer = new Peer(myPin, { config: peerConfig });
 
         myPeer.on('open', (id) => {
           document.getElementById('startBtn').style.opacity = "0.2";
@@ -268,7 +263,7 @@
         const s = document.getElementById('star-' + seatIndex);
         if(s) {
           s.classList.add('active');
-          s.setAttribute('data-name', call.peer);
+          s.setAttribute('data-name', 'HOST (' + call.peer + ')');
         }
       }
       call.on('stream', s => { const a = new Audio(); a.srcObject = s; a.play(); });
@@ -281,7 +276,7 @@
     }
 
     document.getElementById('connectBtn').addEventListener('click', () => {
-      const rId = document.getElementById('remoteIdInput').value.toUpperCase();
+      const rId = document.getElementById('remoteIdInput').value;
       if(rId && rId !== myPeer.id) {
         playSound(sndWood);
         const call = myPeer.call(rId, myStream);
