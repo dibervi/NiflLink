@@ -81,7 +81,7 @@
     </div>
   </div>
 
-  <script>
+<script>
     const runes = ["ᚫ", "ᚱ", "ᚷ", "ᛞ", "ᛗ", "ᛟ", "ᚹ", "ᚻ", "ᚾ", "ᛁ", "ᛃ", "ᛒ"];
     const runeNames = [
       "Posel Ansuz", "Poutník Raido", "Dárce Gebo", "Světlonoš Dagaz", 
@@ -90,11 +90,13 @@
     ];
 
     let myPeer, myStream, audioContext;
-    let activePeers = new Map();
+    let myId = null;
+    let isHost = false;
+    let activePeers = new Map();     // peerId => {seat}
+    let dataConns = new Map();       // peerId => DataConnection
     let isAnyoneSpeaking = false;
-    let isHost = true;
 
-    // --- MATRIX ANIMACE ---
+    // MATRIX
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     let columns, drops;
@@ -114,7 +116,7 @@
     }
     setInterval(drawMatrix, 60);
 
-    // --- ROZESETÍ RUN DO KRUHU ---
+    // ROZSETÍ RUN
     for (let i = 0; i < 12; i++) {
       const r = document.createElement('div');
       r.className = 'star'; r.id = 'star-' + i; r.textContent = runes[i];
@@ -124,75 +126,55 @@
       document.getElementById('starsContainer').appendChild(r);
     }
 
-    // --- PEER JS LOGIKA ---
-    document.getElementById('startBtn').onclick = async () => {
-      try {
-        myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        const pin = Math.floor(1000 + Math.random() * 9000).toString();
-        myPeer = new Peer(pin);
-        
-        myPeer.on('open', id => {
-          document.getElementById('startBtn').style.display = "none";
-          document.getElementById('ui-panel').classList.remove('ui-hidden');
-          document.getElementById('myNameDisplay').textContent = id;
-          updateStar(0, 'Goði', true); // Hostitel je vždy první runa
-          attachVoice(myStream, 0);
-        });
+    function updateStar(seat, name, active = true) {
+      const el = document.getElementById('star-' + seat);
+      if (!el) return;
+      if (active) {
+        el.classList.add('active');
+        el.setAttribute('data-name', name);
+      } else {
+        el.classList.remove('active', 'speaking');
+        el.removeAttribute('data-name');
+      }
+    }
 
-        myPeer.on('call', call => {
-          call.answer(myStream);
-          handleCall(call);
-        });
+    function broadcastPeerList() {
+      if (!isHost) return;
+      const list = Array.from(activePeers.keys());
+      dataConns.forEach(conn => { if (conn.open) conn.send({type: 'peerList', peers: list}); });
+    }
 
-        myPeer.on('disconnected', () => myPeer.reconnect());
-      } catch(e) { alert("Mikrofon je pro sněm nezbytný."); }
-    };
+    function handleSignaling(data, senderId) {
+      if (data.type === 'join' && isHost) {
+        if (!activePeers.has(senderId)) {
+          const seat = activePeers.size + 1;
+          activePeers.set(senderId, {seat});
+          updateStar(seat, runeNames[seat], true);
+          broadcastPeerList();
+        }
+      } else if (data.type === 'peerList') {
+        data.peers.forEach(peerId => {
+          if (peerId !== myId && !activePeers.has(peerId)) {
+            const call = myPeer.call(peerId, myStream);
+            handleCall(call);
+          }
+        });
+      }
+    }
 
     function handleCall(call) {
       call.on('stream', stream => {
-        if (!activePeers.has(call.peer)) {
-          const seat = activePeers.size + 1;
-          activePeers.set(call.peer, { seat });
-          
-          // Nastavení rituálního jména podle runy
-          updateStar(seat, runeNames[seat], true);
-          
-          if (!isHost) {
-            document.getElementById('ui-panel').classList.add('ui-hidden');
-          }
+        if (activePeers.has(call.peer)) return;
+        const seat = activePeers.size + 1;
+        activePeers.set(call.peer, {seat});
+        updateStar(seat, runeNames[seat], true);
 
-          let a = document.getElementById('audio-' + call.peer) || document.createElement('audio');
-          a.id = 'audio-' + call.peer; a.autoplay = true; a.srcObject = stream;
-          a.setAttribute('playsinline', 'true');
-          document.body.appendChild(a);
-          attachVoice(stream, seat);
-        }
+        const a = document.createElement('audio');
+        a.id = 'audio-' + call.peer; a.autoplay = true; a.srcObject = stream;
+        document.body.appendChild(a);
+        attachVoice(stream, seat);
       });
       call.on('close', () => removePeer(call.peer));
-    }
-
-    document.getElementById('connectBtn').onclick = () => {
-      const val = document.getElementById('remoteIdInput').value;
-      if(val && val !== myPeer.id) {
-        isHost = false; 
-        const call = myPeer.call(val, myStream);
-        handleCall(call);
-      }
-    };
-
-    function updateStar(id, name, active) {
-      const el = document.getElementById('star-' + id);
-      if (el) {
-        if (active) { 
-          el.classList.add('active'); 
-          el.setAttribute('data-name', name); 
-        } else { 
-          el.classList.remove('active', 'speaking'); 
-          el.removeAttribute('data-name'); 
-        }
-      }
     }
 
     function removePeer(peerId) {
@@ -202,14 +184,13 @@
         const aud = document.getElementById('audio-' + peerId);
         if (aud) aud.remove();
         activePeers.delete(peerId);
-        if (activePeers.size === 0) {
-            isHost = true;
-            document.getElementById('ui-panel').classList.remove('ui-hidden');
-        }
       }
+      dataConns.delete(peerId);
+      if (isHost) broadcastPeerList();
     }
 
     function attachVoice(stream, seat) {
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const analyser = audioContext.createAnalyser();
       const source = audioContext.createMediaStreamSource(stream);
       source.connect(analyser);
@@ -219,14 +200,76 @@
       function check() {
         if (!el || !el.classList.contains('active')) return;
         analyser.getByteFrequencyData(data);
-        const avg = data.reduce((a,b)=>a+b)/data.length;
-        // Citlivost: 12 je ideální pro běžný mikrofon
-        if(avg > 12) el.classList.add('speaking'); else el.classList.remove('speaking');
+        const avg = data.reduce((a,b)=>a+b,0) / data.length;
+        if (avg > 15) el.classList.add('speaking');
+        else el.classList.remove('speaking');
         isAnyoneSpeaking = !!document.querySelector('.star.speaking');
         requestAnimationFrame(check);
       }
       check();
     }
-  </script>
+
+    // === HOST ===
+    document.getElementById('startBtn').onclick = async () => {
+      try {
+        myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        const pin = Math.floor(1000 + Math.random() * 9000).toString();
+        myPeer = new Peer(pin);
+        myId = pin;
+        isHost = true;
+
+        myPeer.on('open', () => {
+          document.getElementById('startBtn').style.display = "none";
+          document.getElementById('ui-panel').classList.remove('ui-hidden');
+          document.getElementById('myNameDisplay').textContent = pin;
+          updateStar(0, 'Goði', true);
+          attachVoice(myStream, 0);
+        });
+
+        myPeer.on('call', call => { call.answer(myStream); handleCall(call); });
+        myPeer.on('connection', conn => {
+          dataConns.set(conn.peer, conn);
+          conn.on('data', data => handleSignaling(data, conn.peer));
+        });
+      } catch(e) { alert("Mikrofon je pro sněm nezbytný."); }
+    };
+
+    // === KLIENT ===
+    document.getElementById('connectBtn').onclick = async () => {
+      const val = document.getElementById('remoteIdInput').value.trim();
+      if (!val) return;
+
+      try {
+        if (!myStream) {
+          myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        isHost = false;
+        myPeer = new Peer();
+
+        myPeer.on('open', id => {
+          myId = id;
+          document.getElementById('startBtn').style.display = "none";
+          document.getElementById('ui-panel').classList.add('ui-hidden');
+          document.getElementById('myNameDisplay').textContent = id;
+          updateStar(0, runeNames[0], true);
+          attachVoice(myStream, 0);
+
+          const conn = myPeer.connect(val);
+          dataConns.set(val, conn);
+          conn.on('open', () => conn.send({type: 'join'}));
+          conn.on('data', data => handleSignaling(data, val));
+
+          const call = myPeer.call(val, myStream);
+          handleCall(call);
+        });
+
+        myPeer.on('call', call => { call.answer(myStream); handleCall(call); });
+      } catch(e) { alert("Mikrofon je pro sněm nezbytný."); }
+    };
+</script>
 </body>
 </html>
