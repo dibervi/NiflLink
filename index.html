@@ -27,19 +27,13 @@
     .star.speaking { animation: none !important; color: var(--fire) !important; text-shadow: 0 0 15px var(--fire); transform: scale(1.4) !important; opacity: 1 !important; z-index: 100; }
 
     #ui-panel {
-      position: absolute;
-      width: 45vmin; height: 45vmin;
-      max-width: 280px; max-height: 280px;
-      background: rgba(15, 15, 15, 0.9);
-      backdrop-filter: blur(20px);
-      border: 2px solid rgba(189,155,93,0.3);
-      border-radius: 50%;
+      position: absolute; width: 45vmin; height: 45vmin; max-width: 280px; max-height: 280px;
+      background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(20px);
+      border: 2px solid rgba(189,155,93,0.3); border-radius: 50%;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 10;
-      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 10; transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(189,155,93,0.1);
-      padding: 20px; box-sizing: border-box;
-      text-align: center;
+      padding: 20px; box-sizing: border-box; text-align: center;
     }
 
     .ui-hidden { opacity: 0; transform: scale(0.2) rotate(-90deg); pointer-events: none; }
@@ -65,29 +59,26 @@
     }
 
     /* KICK MODAL */
-#kickModal {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.92);
-  display: none; align-items: center; justify-content: center;
-  z-index: 200;
-}
-#kickModal.show { display: flex; }
-#kickModal .modal-content {
-  background: rgba(15,15,15,0.98); border: 3px solid var(--gold);
-  border-radius: 25px; padding: 35px 25px; width: 88%; max-width: 340px;
-  text-align: center; box-shadow: 0 0 80px rgba(189,155,93,0.5);
-}
-#kickModal .rune { font-size: 52px; color: var(--gold); margin-bottom: 8px; animation: breathe 3s infinite; }
-#kickModal h2 { color: #e0e0e0; margin: 0 0 8px; font-size: 1.45em; letter-spacing: 3px; }
-#kickModal #kickName { color: var(--gold); font-size: 1.65em; font-weight: bold; letter-spacing: 3px; margin: 15px 0 25px; }
-.kick-buttons { display: flex; gap: 16px; justify-content: center; }
-.kick-buttons button {
-  padding: 14px 34px; border: none; border-radius: 30px; font-weight: bold;
-  cursor: pointer; font-size: 0.95em; transition: 0.3s;
-}
-#kickCancel { background: #333; color: #ddd; }
-#kickConfirm { background: #9f2a2a; color: white; }
-#kickConfirm:hover { background: #c22; transform: scale(1.06); }
-    
+    #kickModal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+      display: none; align-items: center; justify-content: center; z-index: 200;
+    }
+    #kickModal.show { display: flex; }
+    #kickModal .modal-content {
+      background: rgba(15,15,15,0.98); border: 3px solid var(--gold);
+      border-radius: 25px; padding: 35px 25px; width: 88%; max-width: 340px;
+      text-align: center; box-shadow: 0 0 80px rgba(189,155,93,0.5);
+    }
+    #kickModal .rune { font-size: 52px; color: var(--gold); margin-bottom: 8px; animation: breathe 3s infinite; }
+    #kickModal h2 { color: #e0e0e0; margin: 0 0 8px; font-size: 1.45em; letter-spacing: 3px; }
+    #kickModal #kickName { color: var(--gold); font-size: 1.65em; font-weight: bold; letter-spacing: 3px; margin: 15px 0 25px; }
+    .kick-buttons { display: flex; gap: 16px; justify-content: center; }
+    .kick-buttons button {
+      padding: 14px 34px; border: none; border-radius: 30px; font-weight: bold;
+      cursor: pointer; font-size: 0.95em; transition: 0.3s;
+    }
+    #kickCancel { background: #333; color: #ddd; }
+    #kickConfirm { background: #9f2a2a; color: white; }
   </style>
 </head>
 <body>
@@ -107,16 +98,16 @@
   </div>
 
   <div id="kickModal">
-  <div class="modal-content">
-    <div class="rune">ᛉ</div>
-    <h2>VYHNAT ZE SNĚMU</h2>
-    <div id="kickName"></div>
-    <div class="kick-buttons">
-      <button id="kickCancel">Zrušit</button>
-      <button id="kickConfirm">VYHNAT</button>
+    <div class="modal-content">
+      <div class="rune">ᛉ</div>
+      <h2>VYHNAT ZE SNĚMU</h2>
+      <div id="kickName"></div>
+      <div class="kick-buttons">
+        <button id="kickCancel">Zrušit</button>
+        <button id="kickConfirm">VYHNAT</button>
+      </div>
     </div>
   </div>
-</div>
   
 <script>
     const runes = ["ᚫ", "ᚱ", "ᚷ", "ᛞ", "ᛗ", "ᛟ", "ᚹ", "ᚻ", "ᚾ", "ᛁ", "ᛃ", "ᛒ"];
@@ -135,7 +126,14 @@
     let isAnyoneSpeaking = false;
     let currentKickSeat = null;
 
-    // MATRIX + RUNY + ostatní funkce zůstávají stejné (jen přidávám modal část)
+    function getFirstFreeSeat() {
+      for (let i = 1; i < 12; i++) {
+        if (!seatToPeer.has(i)) return i;
+      }
+      return null;
+    }
+
+    // MATRIX 
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     let columns, drops;
@@ -155,6 +153,7 @@
     }
     setInterval(drawMatrix, 60);
 
+    // KULATÝ STŮL
     for (let i = 0; i < 12; i++) {
       const r = document.createElement('div');
       r.className = 'star'; r.id = 'star-' + i; r.textContent = runes[i];
@@ -164,7 +163,6 @@
       document.getElementById('starsContainer').appendChild(r);
     }
 
-    // KLIKNUTÍ NA RUNU → MODAL
     document.querySelectorAll('.star').forEach(star => {
       star.style.cursor = 'pointer';
       star.addEventListener('click', () => {
@@ -172,16 +170,12 @@
         const seat = parseInt(star.id.split('-')[1]);
         if (seat === 0 || !star.classList.contains('active')) return;
         currentKickSeat = seat;
-        const name = star.getAttribute('data-name') || 'Neznámý';
-        document.getElementById('kickName').textContent = name;
+        document.getElementById('kickName').textContent = star.getAttribute('data-name') || 'Neznámý';
         document.getElementById('kickModal').classList.add('show');
       });
     });
 
-    // MODAL BUTTONS
-    document.getElementById('kickCancel').onclick = () => {
-      document.getElementById('kickModal').classList.remove('show');
-    };
+    document.getElementById('kickCancel').onclick = () => document.getElementById('kickModal').classList.remove('show');
     document.getElementById('kickConfirm').onclick = () => {
       if (currentKickSeat !== null) {
         kickPeer(currentKickSeat);
@@ -189,7 +183,7 @@
       }
     };
 
-    function updateStar(seat, name, active = true) { /* stejné jako dřív */ 
+    function updateStar(seat, name, active = true) {
       const el = document.getElementById('star-' + seat);
       if (!el) return;
       if (active) {
@@ -201,26 +195,33 @@
       }
     }
 
-    function broadcastPeerList() { /* stejné */ 
+    function broadcastPeerList() {
       if (!isHost) return;
       const list = Array.from(activePeers.keys());
       dataConns.forEach(conn => { if (conn.open) conn.send({type: 'peerList', peers: list}); });
     }
 
-    function kickPeer(seat) { /* stejné */ 
+    function kickPeer(seat) {
       if (!isHost || seat === 0) return;
       const peerId = seatToPeer.get(seat);
       if (!peerId) return;
-      if (dataConns.has(peerId)) dataConns.get(peerId).close();
-      if (myPeer && myPeer.connections[peerId]) myPeer.connections[peerId].forEach(c => c.close());
+      const conn = dataConns.get(peerId);
+      if (conn) {
+        conn.send({type: 'kicked'}); // Řekneme mu, že končí
+        setTimeout(() => conn.close(), 500);
+      }
       removePeer(peerId);
-      broadcastPeerList();
     }
 
-    function handleSignaling(data, senderId) { /* stejné */ 
+    function handleSignaling(data, senderId) {
+      if (data.type === 'kicked') {
+        alert("Byl jsi vyhoštěn ze sněmu!");
+        location.reload();
+      }
       if (data.type === 'join' && isHost) {
         if (!activePeers.has(senderId)) {
-          const seat = activePeers.size + 1;
+          const seat = getFirstFreeSeat();
+          if (seat === null) return;
           activePeers.set(senderId, {seat});
           seatToPeer.set(seat, senderId);
           updateStar(seat, runeNames[seat], true);
@@ -228,36 +229,36 @@
         }
       } else if (data.type === 'peerList') {
         const newList = new Set(data.peers);
-        Array.from(activePeers.keys()).forEach(peerId => {
+        activePeers.forEach((val, peerId) => {
           if (!newList.has(peerId) && peerId !== myId) removePeer(peerId);
         });
         data.peers.forEach(peerId => {
           if (peerId !== myId && !activePeers.has(peerId)) {
             const call = myPeer.call(peerId, myStream);
-            handleCall(call);
+            if (call) handleCall(call);
           }
         });
       }
     }
 
-    function handleCall(call) { /* stejné */ 
+    function handleCall(call) {
       call.on('stream', stream => {
         if (activePeers.has(call.peer)) return;
-        const seat = activePeers.size + 1;
+        const seat = getFirstFreeSeat();
+        if (seat === null) return;
         activePeers.set(call.peer, {seat});
         seatToPeer.set(seat, call.peer);
         updateStar(seat, runeNames[seat], true);
-
+        
         const a = document.createElement('audio');
         a.id = 'audio-' + call.peer; a.autoplay = true; a.srcObject = stream;
         document.body.appendChild(a);
-        a.play().catch(e => console.log('audio play error:', e));
         attachVoice(stream, seat);
       });
       call.on('close', () => removePeer(call.peer));
     }
 
-    function removePeer(peerId) { /* stejné */ 
+    function removePeer(peerId) {
       const data = activePeers.get(peerId);
       if (data) {
         seatToPeer.delete(data.seat);
@@ -270,9 +271,8 @@
       if (isHost) broadcastPeerList();
     }
 
-    function attachVoice(stream, seat) { /* stejné */ 
+    function attachVoice(stream, seat) {
       if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') audioContext.resume();
       const analyser = audioContext.createAnalyser();
       const source = audioContext.createMediaStreamSource(stream);
       source.connect(analyser);
@@ -291,18 +291,14 @@
       check();
     }
 
-    // HOST + KLIENT (stejné jako minule)
     document.getElementById('startBtn').onclick = async () => {
       try {
         myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
         const pin = Math.floor(1000 + Math.random() * 9000).toString();
         myPeer = new Peer(pin);
-        myId = pin;
         isHost = true;
+        myId = pin;
         seatToPeer.set(0, pin);
-
         myPeer.on('open', () => {
           document.getElementById('startBtn').style.display = "none";
           document.getElementById('ui-panel').classList.remove('ui-hidden');
@@ -310,47 +306,34 @@
           updateStar(0, 'Goði', true);
           attachVoice(myStream, 0);
         });
-
         myPeer.on('call', call => { call.answer(myStream); handleCall(call); });
         myPeer.on('connection', conn => {
           dataConns.set(conn.peer, conn);
           conn.on('data', data => handleSignaling(data, conn.peer));
         });
-      } catch(e) { alert("Mikrofon je pro sněm nezbytný."); }
+      } catch(e) { alert("Mikrofon je nutný."); }
     };
 
     document.getElementById('connectBtn').onclick = async () => {
       const val = document.getElementById('remoteIdInput').value.trim();
       if (!val) return;
-
       try {
-        if (!myStream) {
-          myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        isHost = false;
+        myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         myPeer = new Peer();
-
         myPeer.on('open', id => {
           myId = id;
           document.getElementById('startBtn').style.display = "none";
           document.getElementById('ui-panel').classList.add('ui-hidden');
-          document.getElementById('myNameDisplay').textContent = id;
-          updateStar(0, runeNames[0], true);
+          updateStar(0, 'Hostitel', true);
           attachVoice(myStream, 0);
-
           const conn = myPeer.connect(val);
           dataConns.set(val, conn);
           conn.on('open', () => conn.send({type: 'join'}));
           conn.on('data', data => handleSignaling(data, val));
-
           const call = myPeer.call(val, myStream);
           handleCall(call);
         });
-
-        myPeer.on('call', call => { call.answer(myStream); handleCall(call); });
-      } catch(e) { alert("Mikrofon je pro sněm nezbytný."); }
+      } catch(e) { alert("Mikrofon je nutný."); }
     };
 </script>
 </body>
