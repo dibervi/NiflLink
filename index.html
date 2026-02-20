@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Nifl-Link | Asatru Sněm</title>
+  <title>Nifl-Link | Asatru Council</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     :root { --gold: #bd9b5d; --bg: #0a0a0a; --rune-stone: #222; --fire: #ff8800; }
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--bg); color: #e0e0e0; font-family: "Segoe UI", sans-serif; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
     
-    #matrixCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.12; pointer-events: none; }
+    #matrixCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.19; pointer-events: none; }
     .grain { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.04; pointer-events: none; z-index: 10; }
     body::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 100%); pointer-events: none; z-index: 5; }
     
@@ -74,10 +74,10 @@
     <button class="center-button" id="startBtn">ᚫ</button>
 
     <div id="ui-panel" class="ui-hidden">
-      <div style="font-size: 0.6em; margin-bottom: 5px; letter-spacing: 2px; color: #666;">KLÍČ GOÐIHO</div>
+      <div style="font-size: 0.6em; margin-bottom: 5px; letter-spacing: 2px; color: #666;">your Key</div>
       <div id="myNameDisplay" style="color:var(--gold); font-weight:bold; font-size: 1.8em; margin-bottom: 15px; letter-spacing: 5px;"></div>
       <input type="tel" id="remoteIdInput" placeholder="PIN" maxlength="4">
-      <button id="connectBtn">Vstoupit do Sněmu</button>
+      <button id="connectBtn">Give/Write key </button>
     </div>
   </div>
 
@@ -107,7 +107,7 @@
     initMatrix(); window.onresize = initMatrix;
     function drawMatrix() {
       ctx.fillStyle = "rgba(10, 10, 10, 0.2)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = isAnyoneSpeaking ? "#bd9b5d" : "#111";
+      ctx.fillStyle = isAnyoneSpeaking ? "#bd9b5d" : "#1f1f1f";
       for (let i = 0; i < drops.length; i++) {
         ctx.fillText(runes[Math.floor(Math.random()*runes.length)], i*25, drops[i]*25);
         if (drops[i]*25 > canvas.height && Math.random() > 0.975) drops[i] = 0;
