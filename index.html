@@ -8,50 +8,22 @@
   <style>
     :root { --gold: #bd9b5d; --bg: #0a0a0a; --rune-stone: #222; --fire: #ffaa00; }
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--bg); color: #e0e0e0; font-family: "Segoe UI", sans-serif; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
-    
     #matrixCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.3; pointer-events: none; }
     .grain { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.04; pointer-events: none; z-index: 10; }
     body::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, transparent 10%, rgba(0,0,0,1) 100%); pointer-events: none; z-index: 5; }
-    
     h1 { position: absolute; top: 5vh; font-size: clamp(16px, 4vw, 24px); letter-spacing: 0.5em; color: #222; z-index: 6; margin: 0; text-transform: uppercase; }
     h1 span { color: var(--gold); }
-
     .stars-container { position: relative; width: 90vmin; height: 90vmin; display: flex; align-items: center; justify-content: center; z-index: 4; }
-
     .star { position: absolute; font-size: clamp(20px, 6vmin, 42px); color: var(--rune-stone); transition: all 0.3s ease; user-select: none; z-index: 15; }
     .star::after { content: attr(data-name); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); font-size: 10px; letter-spacing: 2px; color: var(--gold); opacity: 0; transition: opacity 0.4s ease; white-space: nowrap; font-weight: bold; text-transform: uppercase; }
-    
     .star.active { color: var(--gold); opacity: 0.8; }
     .star.active::after { opacity: 1; }
-    
-    .star.speaking { 
-      color: var(--fire) !important; 
-      text-shadow: 0 0 25px var(--fire), 0 0 50px var(--fire); 
-      transform: scale(1.4) !important; 
-      opacity: 1 !important; 
-      z-index: 100; 
-    }
-
-    #ui-panel {
-      position: absolute; width: 50vmin; height: 50vmin; max-width: 300px; max-height: 300px;
-      background: rgba(5, 5, 5, 0.95); backdrop-filter: blur(20px);
-      border: 1px solid var(--gold); border-radius: 50%;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 200; transition: 0.5s; padding: 20px; box-sizing: border-box; text-align: center;
-    }
-
+    .star.speaking { color: var(--fire) !important; text-shadow: 0 0 25px var(--fire), 0 0 50px var(--fire); transform: scale(1.4) !important; opacity: 1 !important; z-index: 100; }
+    #ui-panel { position: absolute; width: 50vmin; height: 50vmin; max-width: 300px; max-height: 300px; background: rgba(5, 5, 5, 0.95); backdrop-filter: blur(20px); border: 1px solid var(--gold); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; transition: 0.5s; padding: 20px; box-sizing: border-box; text-align: center; }
     .hidden { display: none !important; opacity: 0; }
-
     input { background: transparent; border: none; border-bottom: 2px solid var(--gold); color: white; padding: 10px; width: 80%; outline: none; margin: 15px 0; text-align: center; font-family: monospace; font-size: 18px; letter-spacing: 3px; }
     button.menu-btn { background: var(--gold); border: none; padding: 12px; border-radius: 25px; cursor: pointer; font-weight: bold; color: #000; font-size: 0.8em; text-transform: uppercase; margin: 5px 0; width: 90%; }
-
-    #centerBtn {
-      width: 25vmin; height: 25vmin; max-width: 120px; max-height: 120px;
-      font-size: clamp(30px, 8vmin, 50px); background: radial-gradient(circle, #bd9b5d, #8a6d3b);
-      color: #111; border: none; border-radius: 50%; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; z-index: 150;
-      box-shadow: 0 0 40px rgba(189,155,93,0.4); transition: 0.5s;
-    }
+    #centerBtn { width: 25vmin; height: 25vmin; max-width: 120px; max-height: 120px; font-size: clamp(30px, 8vmin, 50px); background: radial-gradient(circle, #bd9b5d, #8a6d3b); color: #111; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 150; box-shadow: 0 0 40px rgba(189,155,93,0.4); transition: 0.5s; }
     #centerBtn.locked { background: #222; color: #444; border: 1px solid #333; box-shadow: none; }
   </style>
 </head>
@@ -59,10 +31,8 @@
   <canvas id="matrixCanvas"></canvas>
   <div class="grain"></div>
   <h1>NIFL-<span>LINK</span></h1>
-  
   <div class="stars-container" id="starsContainer">
     <button id="centerBtn">ᚫ</button>
-
     <div id="ui-panel" class="hidden">
       <button class="menu-btn" id="btnModeCreate">VYTVOŘIT SNĚM</button>
       <input type="text" id="roomInput" placeholder="NÁZEV SNĚMU" maxlength="15">
@@ -73,43 +43,25 @@
 <script>
   const runes = ["ᚫ", "ᚱ", "ᚷ", "ᛞ", "ᛗ", "ᛟ", "ᚹ", "ᚻ", "ᚾ", "ᛁ", "ᛃ", "ᛒ"];
   const runeNames = ["Goði", "Poutník Raido", "Dárce Gebo", "Světlonoš Dagaz", "Strážce Mannaz", "Ochránce Othala", "Šířitel Wunjo", "Vládce Hagalaz", "Zkoušený Nauthiz", "Strážce Isa", "Sklizeň Jera", "Ochránce Berkano"];
-
-  // Konfigurace pro globální spojení (STUN servery)
-  const peerConfig = {
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
-      ]
-    }
-  };
+  const peerConfig = { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }] } };
 
   let myPeer, myStream, audioContext;
-  let isHost = false, isLocked = false;
-  let activePeers = new Map(); 
-  let seatToPeer = new Map();
-  let dataConns = new Map();
+  let isHost = false, isLocked = false, mySeat = null;
+  let activePeers = new Map(), seatToPeer = new Map(), dataConns = new Map();
 
   // MATRIX ANIMACE
   const canvas = document.getElementById('matrixCanvas');
   const ctx = canvas.getContext('2d');
   let columns, drops;
-  function initMatrix() { 
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight; 
-    columns = Math.floor(canvas.width/20); drops = Array(columns).fill(1); 
-  }
+  function initMatrix() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; columns = Math.floor(canvas.width/20); drops = Array(columns).fill(1); }
   initMatrix(); window.onresize = initMatrix;
-
   function drawMatrix() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.15)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
     const isSpeaking = !!document.querySelector('.star.speaking');
     ctx.fillStyle = isSpeaking ? "rgba(189,155,93,0.5)" : "rgba(30,30,30,0.3)"; 
     ctx.font = "15px monospace";
     for(let i=0; i<drops.length; i++) {
-      const text = runes[Math.floor(Math.random()*runes.length)];
-      ctx.fillText(text, i*20, drops[i]*20);
+      ctx.fillText(runes[Math.floor(Math.random()*runes.length)], i*20, drops[i]*20);
       if(drops[i]*20 > canvas.height && Math.random() > (isSpeaking ? 0.90 : 0.975)) drops[i] = 0;
       drops[i]++;
     }
@@ -130,57 +82,37 @@
   const uiPanel = document.getElementById('ui-panel');
   const roomInput = document.getElementById('roomInput');
 
-  // START SEKVENCE
   centerBtn.onclick = async () => {
-    if (myPeer) { 
-        if(isHost) toggleLock(); 
-        return; 
-    }
+    if (myPeer) { if(isHost) toggleLock(); return; }
     centerBtn.classList.add('hidden'); 
     try {
       myStream = await navigator.mediaDevices.getUserMedia({audio: true});
       uiPanel.classList.remove('hidden'); 
-      // Aktivace audia po kliku (nutné pro prohlížeče)
       if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
       if (audioContext.state === 'suspended') await audioContext.resume();
-    } catch(e) {
-      alert("Bez mikrofonu nelze vstoupit.");
-      centerBtn.classList.remove('hidden');
-    }
+    } catch(e) { alert("Bez mikrofonu nelze vstoupit."); centerBtn.classList.remove('hidden'); }
   };
 
-  // VYTVOŘIT
   document.getElementById('btnModeCreate').onclick = () => {
     const name = roomInput.value.trim().toLowerCase();
-    if (name.length < 3) return alert("Název je příliš krátký.");
-    
+    if (name.length < 3) return alert("Název je krátký.");
     myPeer = new Peer(name, peerConfig);
-    isHost = true;
-    
+    isHost = true; mySeat = 0;
     myPeer.on('open', () => {
-      uiPanel.classList.add('hidden');
-      centerBtn.textContent = "ᛟ"; centerBtn.classList.remove('hidden');
-      updateStar(0, "Goði");
-      attachVoice(myStream, 0);
+      uiPanel.classList.add('hidden'); centerBtn.textContent = "ᛟ"; centerBtn.classList.remove('hidden');
+      updateStar(0, "Goði"); attachVoice(myStream, 0);
     });
-
     myPeer.on('connection', conn => {
       if(isLocked) return;
       dataConns.set(conn.peer, conn);
       conn.on('data', d => handleSignaling(d, conn.peer));
     });
-
-    myPeer.on('call', call => {
-      call.answer(myStream);
-      handleCall(call);
-    });
+    myPeer.on('call', call => { call.answer(myStream); handleCall(call); });
   };
 
-  // PŘIPOJIT SE
   document.getElementById('btnModeJoin').onclick = () => {
     const name = roomInput.value.trim().toLowerCase();
     if (!name) return;
-
     myPeer = new Peer(peerConfig);
     myPeer.on('open', () => {
       uiPanel.classList.add('hidden');
@@ -188,16 +120,12 @@
       dataConns.set(name, conn);
       conn.on('open', () => conn.send({type: 'join'}));
       conn.on('data', d => handleSignaling(d, name));
+      myPeer.on('call', call => { call.answer(myStream); handleCall(call); });
       myPeer.call(name, myStream);
-      updateStar(0, "Goði");
-      attachVoice(myStream, 0); 
     });
   };
 
-  function toggleLock() {
-    isLocked = !isLocked;
-    centerBtn.classList.toggle('locked', isLocked);
-  }
+  function toggleLock() { isLocked = !isLocked; centerBtn.classList.toggle('locked', isLocked); }
 
   function handleSignaling(data, senderId) {
     if (data.type === 'join' && isHost) {
@@ -207,11 +135,23 @@
         activePeers.set(senderId, {seat});
         seatToPeer.set(seat, senderId);
         updateStar(seat, runeNames[seat]);
+        dataConns.get(senderId).send({type: 'yourSeat', seat: seat});
         broadcastSeats();
       }
     }
+    if (data.type === 'yourSeat') {
+      mySeat = data.seat;
+      attachVoice(myStream, mySeat);
+    }
     if (data.type === 'seatUpdate') {
-      data.seats.forEach(s => updateStar(s.index, s.name, true));
+      data.seats.forEach(s => {
+          updateStar(s.index, s.name, true);
+          // Uložíme si mapování pro vizualizaci cizích streamů
+          if (s.index !== mySeat) {
+              // Zde by šlo mapovat peerId, pokud bychom ho posílali, 
+              // pro teď stačí updateStar
+          }
+      });
     }
   }
 
@@ -227,30 +167,33 @@
       audio.srcObject = s; audio.autoplay = true;
       document.body.appendChild(audio);
       setTimeout(() => {
-        const seat = activePeers.get(call.peer)?.seat || 0;
+        let seat = 0;
+        if (isHost) {
+            seat = activePeers.get(call.peer)?.seat || 0;
+        } else {
+            // Hostitel je vždy 0, pro ostatní klienty v P2P sněmu by bylo třeba 
+            // ID v seatUpdate, ale pro 2 lidi to funguje hned
+            seat = 0; 
+        }
         attachVoice(s, seat);
-      }, 1000);
+      }, 1500);
     });
   }
 
   async function attachVoice(stream, seat) {
     if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
     if (audioContext.state === 'suspended') await audioContext.resume();
-    
     const analyser = audioContext.createAnalyser();
     const source = audioContext.createMediaStreamSource(stream);
     source.connect(analyser);
     analyser.fftSize = 256;
     const data = new Uint8Array(analyser.frequencyBinCount);
     const el = document.getElementById('star-' + seat);
-    
     function check() {
       if (!el || !el.classList.contains('active')) return;
       analyser.getByteFrequencyData(data);
-      let sum = 0;
-      for(let i=0; i<data.length; i++) sum += data[i];
-      if ((sum / data.length) > 12) el.classList.add('speaking'); 
-      else el.classList.remove('speaking');
+      let sum = 0; for(let i=0; i<data.length; i++) sum += data[i];
+      if ((sum / data.length) > 12) el.classList.add('speaking'); else el.classList.remove('speaking');
       requestAnimationFrame(check);
     }
     check();
