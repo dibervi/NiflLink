@@ -8,79 +8,28 @@
   <style>
     :root { --gold: #bd9b5d; --bg: #0a0a0a; --rune-stone: #222; --fire: #ff8800; }
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--bg); color: #e0e0e0; font-family: "Segoe UI", sans-serif; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
-    
     #matrixCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.19; pointer-events: none; }
     .grain { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.04; pointer-events: none; z-index: 10; }
     body::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 100%); pointer-events: none; z-index: 5; }
-    
     h1 { position: absolute; top: 5vh; font-size: clamp(18px, 5vw, 28px); letter-spacing: 0.5em; color: #333; z-index: 6; margin: 0; text-transform: uppercase; }
     h1 span { color: var(--gold); }
-
     .stars-container { position: relative; width: 90vmin; height: 90vmin; display: flex; align-items: center; justify-content: center; z-index: 4; }
-
-    .star { position: absolute; font-size: clamp(18px, 5vmin, 38px); color: var(--rune-stone); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); user-select: none; }
+    .star { position: absolute; font-size: clamp(18px, 5vmin, 38px); color: var(--rune-stone); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); user-select: none; cursor: pointer; }
     .star::after { content: attr(data-name); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); font-size: 11px; letter-spacing: 1px; color: var(--gold); opacity: 0; transition: opacity 0.4s ease; white-space: nowrap; font-weight: bold; text-transform: uppercase; }
     .star.active { color: var(--gold); animation: breathe 5s infinite; }
     .star.active::after { opacity: 1; }
-    
     @keyframes breathe { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
     .star.speaking { animation: none !important; color: var(--fire) !important; text-shadow: 0 0 15px var(--fire); transform: scale(1.4) !important; opacity: 1 !important; z-index: 100; }
-
-    #ui-panel {
-      position: absolute; width: 45vmin; height: 45vmin; max-width: 280px; max-height: 280px;
-      background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(20px);
-      border: 2px solid rgba(189,155,93,0.3); border-radius: 50%;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 10; transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(189,155,93,0.1);
-      padding: 20px; box-sizing: border-box; text-align: center;
-    }
-
-    .ui-hidden { opacity: 0; transform: scale(0.2) rotate(-90deg); pointer-events: none; }
-
-    input { 
-      background: transparent; border: none; border-bottom: 1px solid var(--gold); 
-      color: white; padding: 10px; width: 70%; outline: none; 
-      margin-bottom: 15px; text-align: center; font-family: monospace; font-size: 20px; letter-spacing: 5px;
-    }
-    
-    button#connectBtn { 
-      background: var(--gold); border: none; padding: 10px 25px; 
-      border-radius: 20px; cursor: pointer; font-weight: bold; color: #1a1a1a; 
-      font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
-    }
-
-    .center-button {
-      width: 25vmin; height: 25vmin; max-width: 130px; max-height: 130px;
-      font-size: clamp(30px, 8vmin, 50px); background: linear-gradient(145deg, #bd9b5d, #8a6d3b);
-      color: #1a1a1a; border: none; border-radius: 50%; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; z-index: 11;
-      box-shadow: 0 0 30px rgba(189,155,93,0.4);
-    }
-
-    /* KICK MODAL */
-    #kickModal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.92);
-      display: none; align-items: center; justify-content: center; z-index: 200;
-    }
+    #ui-panel { position: absolute; width: 50vmin; height: 50vmin; max-width: 320px; max-height: 320px; background: rgba(15,15,15,0.9); backdrop-filter: blur(20px); border: 2px solid rgba(189,155,93,0.3); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; transition: all 0.6s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 50px rgba(0,0,0,0.8); padding: 20px; box-sizing: border-box; text-align: center; }
+    .ui-hidden { opacity: 0; transform: scale(0.5) rotate(-20deg); pointer-events: none; }
+    input { background: transparent; border: none; border-bottom: 1px solid var(--gold); color: white; padding: 10px; width: 80%; outline: none; margin-bottom: 15px; text-align: center; font-family: monospace; font-size: 16px; letter-spacing: 2px; }
+    .btn-row { display: flex; gap: 10px; width: 100%; justify-content: center; }
+    button.action-btn { background: var(--gold); border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; color: #1a1a1a; font-size: 0.7em; text-transform: uppercase; transition: 0.3s; flex: 1; }
+    .center-button { width: 25vmin; height: 25vmin; max-width: 130px; max-height: 130px; font-size: clamp(30px, 8vmin, 50px); background: linear-gradient(145deg, #bd9b5d, #8a6d3b); color: #1a1a1a; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 11; box-shadow: 0 0 30px rgba(189,155,93,0.4); position: relative; }
+    .center-button.locked { background: linear-gradient(145deg, #333, #111); color: #555; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    #kickModal { position: fixed; inset: 0; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 200; }
     #kickModal.show { display: flex; }
-    #kickModal .modal-content {
-      background: rgba(15,15,15,0.98); border: 3px solid var(--gold);
-      border-radius: 25px; padding: 35px 25px; width: 88%; max-width: 360px;
-      text-align: center; box-shadow: 0 0 80px rgba(189,155,93,0.5);
-    }
-    #kickModal .rune { font-size: 52px; color: var(--gold); margin-bottom: 8px; animation: breathe 3s infinite; }
-    #kickModal h2 { color: #e0e0e0; margin: 0 0 8px; font-size: 1.45em; letter-spacing: 3px; }
-    #kickModal #kickName { color: var(--gold); font-size: 1.65em; font-weight: bold; letter-spacing: 3px; margin: 15px 0 25px; }
-    .kick-buttons { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-    .kick-buttons .row { display: flex; gap: 10px; }
-    .kick-buttons button {
-      padding: 12px 24px; border: none; border-radius: 30px; font-weight: bold;
-      cursor: pointer; font-size: 0.85em; transition: 0.3s;
-    }
-    #kickCancel { background: #333; color: #ddd; }
-    #kickConfirm { background: #9f2a2a; color: white; }
-    #voteStartBtn { background: var(--gold); color: #1a1a1a; width: 100%; }
+    .modal-content { background: rgba(15,15,15,0.98); border: 3px solid var(--gold); border-radius: 25px; padding: 35px 25px; width: 88%; max-width: 360px; text-align: center; }
   </style>
 </head>
 <body>
@@ -89,119 +38,82 @@
   <h1>NIFL-<span>LINK</span></h1>
   
   <div class="stars-container" id="starsContainer">
-    <button class="center-button" id="startBtn">ᚫ</button>
-
-    <div id="ui-panel" class="ui-hidden">
-      <div style="font-size: 0.6em; margin-bottom: 5px; letter-spacing: 2px; color: #666;">YOUR PIN</div>
-      <div id="myNameDisplay" style="color:var(--gold); font-weight:bold; font-size: 1.8em; margin-bottom: 15px; letter-spacing: 5px;"></div>
-      <input type="tel" id="remoteIdInput" placeholder="PIN" maxlength="4">
-      <button id="connectBtn">Give/Write Pin </button>
+    <button class="center-button" id="mainCircleBtn">ᚫ</button>
+    <div id="ui-panel">
+      <div style="font-size: 0.6em; margin-bottom: 8px; letter-spacing: 2px; color: #666;">NÁZEV SNĚMU</div>
+      <input type="text" id="roomInput" placeholder="NÁZEV" autocomplete="off" maxlength="20">
+      <div class="btn-row">
+        <button class="action-btn" id="hostBtn">Založit</button>
+        <button class="action-btn" id="connectBtn">Vstoupit</button>
+      </div>
     </div>
   </div>
 
   <div id="kickModal">
     <div class="modal-content">
-      <div class="rune">ᛉ</div>
+      <div style="font-size: 52px; color: var(--gold); margin-bottom: 8px;">ᛉ</div>
       <h2>SNĚMOVNÍ SOUD</h2>
-      <div id="kickName"></div>
-      <div class="kick-buttons">
-        <button id="voteStartBtn">VYZVAT K HLASOVÁNÍ</button>
-        <div class="row">
-          <button id="kickCancel">Zrušit</button>
-          <button id="kickConfirm">VYHNAT</button>
-        </div>
+      <div id="kickName" style="color: var(--gold); font-size: 1.65em; font-weight: bold; margin: 15px 0;"></div>
+      <div id="voteStatus" style="margin-top: 10px; color: var(--fire); font-weight: bold; font-size: 0.9em;"></div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+        <button id="voteStartBtn" class="action-btn" style="width:100%">VYZVAT K HLASOVÁNÍ</button>
+        <button id="kickCancel" class="action-btn" style="background:#333; color:#ccc;">Zrušit</button>
       </div>
     </div>
   </div>
-  
+
 <script>
-    const runes = ["ᚫ", "ᚱ", "ᚷ", "ᛞ", "ᛗ", "ᛟ", "ᚹ", "ᚻ", "ᚾ", "ᛁ", "ᛃ", "ᛒ"];
-    const runeNames = [
-      "Posel Ansuz", "Poutník Raido", "Dárce Gebo", "Světlonoš Dagaz", 
-      "Strážce Mannaz", "Ochránce Othala", "Šířitel Wunjo", "Vládce Hagalaz", 
-      "Zkoušený Nauthiz", "Strážce Isa", "Sklizeň Jera", "Ochránce Berkano"
-    ];
+  const runes = ["ᚫ","ᚱ","ᚷ","ᛞ","ᛗ","ᛟ","ᚹ","ᚻ","ᚾ","ᛁ","ᛃ","ᛒ"];
+  const runeNames = ["Goði","Poutník Raido","Dárce Gebo","Světlonoš Dagaz","Strážce Mannaz","Ochránce Othala","Šířitel Wunjo","Vládce Hagalaz","Zkoušený Nauthiz","Strážce Isa","Sklizeň Jera","Ochránce Berkano"];
 
-    let myPeer, myStream, audioContext;
-    let myId = null;
-    let isHost = false;
-    let activePeers = new Map();
-    let seatToPeer = new Map();
-    let dataConns = new Map();
-    let isAnyoneSpeaking = false;
-    let currentKickSeat = null;
+  let myPeer, myStream, audioContext;
+  let isHost = false, isLocked = false, roomName = null;
+  let activePeers = new Map(); // peerId -> seat
+  let seatToPeer = new Map();
+  let seatMap = new Map();     // seat -> peerId or "me"
+  let mySeat = null;
+  let currentKickSeat = null;
+  let voteCount = 0;
 
-    function getFirstFreeSeat() {
-      for (let i = 1; i < 12; i++) {
-        if (!seatToPeer.has(i)) return i;
-      }
-      return null;
+  const canvas = document.getElementById('matrixCanvas');
+  const ctx = canvas.getContext('2d');
+  let columns, drops;
+  function initMatrix() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; columns = Math.floor(canvas.width / 25); drops = Array(columns).fill(1); }
+  initMatrix(); window.onresize = initMatrix;
+  function drawMatrix() {
+    ctx.fillStyle = "rgba(10,10,10,0.2)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = document.querySelector('.star.speaking') ? "#bd9b5d" : "#1f1f1f";
+    for (let i = 0; i < drops.length; i++) {
+      ctx.fillText(runes[Math.floor(Math.random()*runes.length)], i*25, drops[i]*25);
+      if (drops[i]*25 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
     }
+  }
+  setInterval(drawMatrix, 60);
 
-    // MATRIX
-    const canvas = document.getElementById('matrixCanvas');
-    const ctx = canvas.getContext('2d');
-    let columns, drops;
-    function initMatrix() {
-      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-      columns = Math.floor(canvas.width / 25); drops = Array(columns).fill(1);
-    }
-    initMatrix(); window.onresize = initMatrix;
-    function drawMatrix() {
-      ctx.fillStyle = "rgba(10, 10, 10, 0.2)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = isAnyoneSpeaking ? "#bd9b5d" : "#1f1f1f";
-      for (let i = 0; i < drops.length; i++) {
-        ctx.fillText(runes[Math.floor(Math.random()*runes.length)], i*25, drops[i]*25);
-        if (drops[i]*25 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i] += isAnyoneSpeaking ? 2 : 1;
-      }
-    }
-    setInterval(drawMatrix, 60);
-
-    // STAR RENDER
-    for (let i = 0; i < 12; i++) {
-      const r = document.createElement('div');
-      r.className = 'star'; r.id = 'star-' + i; r.textContent = runes[i];
-      const angle = (i * 360 / 12 - 90) * Math.PI / 180;
-      r.style.left = `calc(50% + ${Math.cos(angle)*38}vmin - 10px)`;
-      r.style.top = `calc(50% + ${Math.sin(angle)*38}vmin - 10px)`;
-      document.getElementById('starsContainer').appendChild(r);
-    }
-
-    // MODAL LOGIC
-    document.querySelectorAll('.star').forEach(star => {
-      star.style.cursor = 'pointer';
-      star.addEventListener('click', () => {
-        if (!isHost) return;
-        const seat = parseInt(star.id.split('-')[1]);
-        if (seat === 0 || !star.classList.contains('active')) return;
-        currentKickSeat = seat;
-        document.getElementById('kickName').textContent = star.getAttribute('data-name') || 'Neznámý';
-        document.getElementById('kickModal').classList.add('show');
-      });
+  // Render stars
+  for (let i = 0; i < 12; i++) {
+    const r = document.createElement('div');
+    r.className = 'star'; r.id = 'star-' + i; r.textContent = runes[i];
+    const angle = (i * 360 / 12 - 90) * Math.PI / 180;
+    r.style.left = `calc(50% + ${Math.cos(angle)*38}vmin - 10px)`;
+    r.style.top = `calc(50% + ${Math.sin(angle)*38}vmin - 10px)`;
+    document.getElementById('starsContainer').appendChild(r);
+    r.addEventListener('click', () => {
+      if (!isHost || i === 0 || !r.classList.contains('active')) return;
+      currentKickSeat = i;
+      document.getElementById('kickName').textContent = runeNames[i];
+      document.getElementById('voteStatus').textContent = "";
+      document.getElementById('kickModal').classList.add('show');
     });
+  }
 
-    document.getElementById('kickCancel').onclick = () => document.getElementById('kickModal').classList.remove('show');
-    
-    document.getElementById('voteStartBtn').onclick = () => {
-      if (!isHost || currentKickSeat === null) return;
-      dataConns.forEach(conn => {
-        if (conn.open) conn.send({ type: 'vote_invite', seat: currentKickSeat });
-      });
-      alert("Sněm byl vyzván k hlasování!");
-    };
-
-    document.getElementById('kickConfirm').onclick = () => {
-      if (currentKickSeat !== null) {
-        kickPeer(currentKickSeat);
-        document.getElementById('kickModal').classList.remove('show');
-      }
-    };
-
-    function updateStar(seat, name, active = true) {
-      const el = document.getElementById('star-' + seat);
-      if (!el) return;
-      if (active) {
+  function updateAllStars() {
+    for (let i = 0; i < 12; i++) {
+      const el = document.getElementById('star-' + i);
+      if (!el) continue;
+      if (seatMap.has(i)) {
+        const name = (i === 0) ? (isHost ? "Goði" : "Hostitel") : runeNames[i];
         el.classList.add('active');
         el.setAttribute('data-name', name);
       } else {
@@ -209,163 +121,189 @@
         el.removeAttribute('data-name');
       }
     }
+  }
 
-    function broadcastPeerList() {
-      if (!isHost) return;
-      const list = Array.from(activePeers.keys());
-      dataConns.forEach(conn => { if (conn.open) conn.send({type: 'peerList', peers: list}); });
+  function broadcastSeatState() {
+    if (!isHost) return;
+    const state = {};
+    seatToPeer.forEach((peerId, seat) => state[seat] = peerId === myPeer.id ? "me" : peerId);
+    activePeers.forEach((seat, peerId) => {
+      const conn = myPeer.connections[peerId]?.[0];
+      if (conn && conn.open) conn.send({type: 'seatState', state});
+    });
+  }
+
+  function broadcastLockState() {
+    if (!isHost) return;
+    activePeers.forEach((seat, peerId) => {
+      const conn = myPeer.connections[peerId]?.[0];
+      if (conn && conn.open) conn.send({type: 'lockState', locked: isLocked});
+    });
+  }
+
+  function getFirstFreeSeat() {
+    for (let i = 1; i < 12; i++) if (!seatToPeer.has(i)) return i;
+    return null;
+  }
+
+  async function attachVoice(stream, seat) {
+    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === 'suspended') await audioContext.resume();
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const el = document.getElementById('star-' + seat);
+    function check() {
+      if (!el || !el.classList.contains('active')) return;
+      analyser.getByteFrequencyData(data);
+      const avg = data.reduce((a,b)=>a+b,0) / data.length;
+      if (avg > 15) el.classList.add('speaking'); else el.classList.remove('speaking');
+      requestAnimationFrame(check);
     }
+    check();
+  }
 
-    function kickPeer(seat) {
-      if (!isHost || seat === 0) return;
-      const peerId = seatToPeer.get(seat);
-      if (!peerId) return;
-      if (dataConns.has(peerId)) {
-          dataConns.get(peerId).send({type: 'kicked'});
-          setTimeout(() => dataConns.get(peerId).close(), 500);
-      }
-      removePeer(peerId);
+  function handleSignaling(data, senderId) {
+    if (data.type === 'seatState') {
+      seatMap.clear();
+      Object.keys(data.state).forEach(s => seatMap.set(parseInt(s), data.state[s]));
+      updateAllStars();
+      mySeat = null;
+      seatMap.forEach((val, seat) => { if (val === "me" || val === myPeer.id) mySeat = seat; });
+      return;
     }
-
-    function handleSignaling(data, senderId) {
-      if (data.type === 'kicked') {
-        alert("Byl jsi vyhoštěn ze sněmu!");
-        location.reload();
-      }
-
-      if (data.type === 'vote_invite') {
-        if (confirm("Souhlasíš s vyhoštěním " + runeNames[data.seat] + "?")) {
-          dataConns.get(senderId).send({ type: 'visual_vote' });
-        }
-      }
-
-      if (data.type === 'visual_vote') {
-        const voterSeat = activePeers.get(senderId)?.seat;
-        const el = document.getElementById('star-' + voterSeat);
-        if (el) {
-          el.style.color = "var(--fire)";
-          el.style.textShadow = "0 0 20px var(--fire)";
-          setTimeout(() => { el.style.color = ""; el.style.textShadow = ""; }, 5000);
-        }
-      }
-
-      if (data.type === 'join' && isHost) {
-        if (!activePeers.has(senderId)) {
-          const seat = getFirstFreeSeat();
-          if (seat === null) return;
-          activePeers.set(senderId, {seat});
-          seatToPeer.set(seat, senderId);
-          updateStar(seat, runeNames[seat], true);
-          broadcastPeerList();
-        }
-      } else if (data.type === 'peerList') {
-        const newList = new Set(data.peers);
-        activePeers.forEach((val, peerId) => {
-          if (!newList.has(peerId) && peerId !== myId) removePeer(peerId);
-        });
-        data.peers.forEach(peerId => {
-          if (peerId !== myId && !activePeers.has(peerId)) {
-            const call = myPeer.call(peerId, myStream);
-            if (call) handleCall(call);
-          }
-        });
+    if (data.type === 'lockState') { isLocked = data.locked; return; }
+    if (data.type === 'locked_out') { alert("Sněm je uzavřený"); location.reload(); return; }
+    if (data.type === 'join' && isHost && !isLocked) {
+      const seat = getFirstFreeSeat();
+      if (!seat) return;
+      activePeers.set(senderId, seat);
+      seatToPeer.set(seat, senderId);
+      seatMap.set(seat, senderId);
+      updateAllStars();
+      broadcastSeatState();
+      const conn = myPeer.connections[senderId]?.[0];
+      if (conn) conn.send({type: 'seatState', state: Object.fromEntries(seatMap)});
+    }
+    if (data.type === 'vote_invite') {
+      if (confirm("Souhlasíš s vyhoštěním " + runeNames[data.seat] + "?")) {
+        const conn = myPeer.connections[senderId]?.[0] || activePeers.get(senderId)?.conn;
+        if (conn) conn.send({type: 'cast_vote', seat: data.seat});
       }
     }
+    if (data.type === 'cast_vote' && isHost) {
+      voteCount++;
+      const needed = Math.ceil((activePeers.size + 1) / 2);
+      document.getElementById('voteStatus').textContent = `Hlasy: ${voteCount}/${needed}`;
+      if (voteCount >= needed) {
+        kickPeer(data.seat);
+        document.getElementById('kickModal').classList.remove('show');
+      }
+    }
+    if (data.type === 'kicked') { alert("Byl jsi vyhoštěn!"); location.reload(); }
+  }
 
-    function handleCall(call) {
-      call.on('stream', stream => {
-        if (activePeers.has(call.peer)) return;
-        const seat = getFirstFreeSeat();
-        if (seat === null) return;
-        activePeers.set(call.peer, {seat});
-        seatToPeer.set(seat, call.peer);
-        updateStar(seat, runeNames[seat], true);
-        
-        const a = document.createElement('audio');
-        a.id = 'audio-' + call.peer; a.autoplay = true; a.srcObject = stream;
-        document.body.appendChild(a);
-        attachVoice(stream, seat);
+  function kickPeer(seat) {
+    const id = seatToPeer.get(seat);
+    if (!id) return;
+    const conn = myPeer.connections[id]?.[0];
+    if (conn) { conn.send({type: 'kicked'}); setTimeout(() => conn.close(), 500); }
+    removePeer(id);
+  }
+
+  function removePeer(id) {
+    const seat = activePeers.get(id);
+    if (seat !== undefined) {
+      seatToPeer.delete(seat);
+      seatMap.delete(seat);
+      updateAllStars();
+    }
+    activePeers.delete(id);
+    if (isHost) broadcastSeatState();
+  }
+
+  function handleCall(call) {
+    call.on('stream', stream => {
+      const audio = document.createElement('audio');
+      audio.srcObject = stream; audio.autoplay = true;
+      document.body.appendChild(audio);
+      const seat = activePeers.get(call.peer) || 0;
+      attachVoice(stream, seat);
+    });
+    call.on('close', () => removePeer(call.peer));
+  }
+
+  // HOST
+  document.getElementById('hostBtn').onclick = async () => {
+    const name = document.getElementById('roomInput').value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+    if (!name || name.length < 3) return alert("Název musí mít 3+ znaky");
+    try {
+      myStream = await navigator.mediaDevices.getUserMedia({audio: true});
+      myPeer = new Peer(name);
+      isHost = true;
+      roomName = name;
+      myPeer.on('open', () => {
+        document.getElementById('ui-panel').classList.add('ui-hidden');
+        document.getElementById('mainCircleBtn').textContent = "ᛟ";
+        seatMap.set(0, "me");
+        updateAllStars();
+        attachVoice(myStream, 0);
       });
-      call.on('close', () => removePeer(call.peer));
+      myPeer.on('connection', conn => {
+        conn.on('data', d => handleSignaling(d, conn.peer));
+        conn.on('open', () => activePeers.set(conn.peer, null));
+      });
+      myPeer.on('call', call => { if (!isLocked) { call.answer(myStream); handleCall(call); } else call.close(); });
+      myPeer.on('error', e => { if (e.type === 'unavailable-id') alert("Název je obsazený"); });
+    } catch(e) { alert("Mikrofon je nutný"); }
+  };
+
+  // CLIENT
+  document.getElementById('connectBtn').onclick = async () => {
+    const name = document.getElementById('roomInput').value.trim().toLowerCase();
+    if (!name) return alert("Zadej název!");
+    try {
+      myStream = await navigator.mediaDevices.getUserMedia({audio: true});
+      myPeer = new Peer();
+      myPeer.on('open', () => {
+        document.getElementById('ui-panel').classList.add('ui-hidden');
+        const conn = myPeer.connect(name);
+        conn.on('open', () => conn.send({type: 'join'}));
+        conn.on('data', d => handleSignaling(d, name));
+        const call = myPeer.call(name, myStream);
+        handleCall(call);
+      });
+    } catch(e) { alert("Mikrofon je nutný"); }
+  };
+
+  // Center button - toggle lock + clean view
+  let uiVisible = true;
+  document.getElementById('mainCircleBtn').onclick = () => {
+    if (!isHost) {
+      uiVisible = !uiVisible;
+      document.getElementById('ui-panel').classList.toggle('ui-hidden', !uiVisible);
+      return;
     }
+    isLocked = !isLocked;
+    document.getElementById('mainCircleBtn').classList.toggle('locked', isLocked);
+    document.getElementById('mainCircleBtn').textContent = isLocked ? "🔒" : "ᛟ";
+    broadcastLockState();
+    alert(isLocked ? "Sněm uzavřen" : "Sněm otevřen");
+  };
 
-    function removePeer(peerId) {
-      const data = activePeers.get(peerId);
-      if (data) {
-        seatToPeer.delete(data.seat);
-        updateStar(data.seat, '', false);
-        const aud = document.getElementById('audio-' + peerId);
-        if (aud) aud.remove();
-        activePeers.delete(peerId);
-      }
-      dataConns.delete(peerId);
-      if (isHost) broadcastPeerList();
-    }
+  document.getElementById('voteStartBtn').onclick = () => {
+    if (!isHost || currentKickSeat === null) return;
+    voteCount = 1;
+    const needed = Math.ceil((activePeers.size + 1) / 2);
+    document.getElementById('voteStatus').textContent = `Hlasy: 1/${needed}`;
+    activePeers.forEach((seat, peerId) => {
+      const conn = myPeer.connections[peerId]?.[0];
+      if (conn) conn.send({type: 'vote_invite', seat: currentKickSeat});
+    });
+  };
 
-    function attachVoice(stream, seat) {
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const analyser = audioContext.createAnalyser();
-      const source = audioContext.createMediaStreamSource(stream);
-      source.connect(analyser);
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      const el = document.getElementById('star-' + seat);
-
-      function check() {
-        if (!el || !el.classList.contains('active')) return;
-        analyser.getByteFrequencyData(data);
-        const avg = data.reduce((a,b)=>a+b,0) / data.length;
-        if (avg > 15) el.classList.add('speaking');
-        else el.classList.remove('speaking');
-        isAnyoneSpeaking = !!document.querySelector('.star.speaking');
-        requestAnimationFrame(check);
-      }
-      check();
-    }
-
-    document.getElementById('startBtn').onclick = async () => {
-      try {
-        myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const pin = Math.floor(1000 + Math.random() * 9000).toString();
-        myPeer = new Peer(pin);
-        isHost = true;
-        myId = pin;
-        seatToPeer.set(0, pin);
-        myPeer.on('open', () => {
-          document.getElementById('startBtn').style.display = "none";
-          document.getElementById('ui-panel').classList.remove('ui-hidden');
-          document.getElementById('myNameDisplay').textContent = pin;
-          updateStar(0, 'Goði', true);
-          attachVoice(myStream, 0);
-        });
-        myPeer.on('call', call => { call.answer(myStream); handleCall(call); });
-        myPeer.on('connection', conn => {
-          dataConns.set(conn.peer, conn);
-          conn.on('data', data => handleSignaling(data, conn.peer));
-        });
-      } catch(e) { alert("Mikrofon je nutný."); }
-    };
-
-    document.getElementById('connectBtn').onclick = async () => {
-      const val = document.getElementById('remoteIdInput').value.trim();
-      if (!val) return;
-      try {
-        myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        myPeer = new Peer();
-        myPeer.on('open', id => {
-          myId = id;
-          document.getElementById('startBtn').style.display = "none";
-          document.getElementById('ui-panel').classList.add('ui-hidden');
-          updateStar(0, 'Hostitel', true);
-          attachVoice(myStream, 0);
-          const conn = myPeer.connect(val);
-          dataConns.set(val, conn);
-          conn.on('open', () => conn.send({type: 'join'}));
-          conn.on('data', data => handleSignaling(data, val));
-          const call = myPeer.call(val, myStream);
-          handleCall(call);
-        });
-      } catch(e) { alert("Mikrofon je nutný."); }
-    };
+  document.getElementById('kickCancel').onclick = () => document.getElementById('kickModal').classList.remove('show');
 </script>
 </body>
 </html>
